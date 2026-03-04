@@ -1,34 +1,55 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SGEDI.Domain.Entities;
-
+using Microsoft.AspNetCore.Identity;
 namespace SGEDI.Infrastructure.Persistence;
-
-// Especificamos <Usuario, Rol, string> para que coincida con tus entidades
-public class ApplicationDbContext : IdentityDbContext<Usuario, Rol, string>
+public class ApplicationDbContext : IdentityDbContext<Usuario, Rol, int>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
     public DbSet<Modulo> Modulos => Set<Modulo>();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    base.OnModelCreating(modelBuilder);
+
+    modelBuilder.Entity<Modulo>(entity =>
     {
-        // ¡Súper importante! Sin esto, Identity no crea sus tablas base
-        base.OnModelCreating(modelBuilder);
+        entity.ToTable("Modulos");
+        entity.HasKey(e => e.Id);
+        
+        entity.HasOne(m => m.Padre)
+              .WithMany(m => m.SubModulos)
+              .HasForeignKey(m => m.PadreId)
+              .OnDelete(DeleteBehavior.Restrict);
+    });
 
-        // Configuramos la tabla de Módulos (Jerarquía)
-        modelBuilder.Entity<Modulo>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasOne(m => m.Padre)
-                  .WithMany(m => m.SubModulos)
-                  .HasForeignKey(m => m.PadreId)
-                  .OnDelete(DeleteBehavior.Restrict);
-        });
+    modelBuilder.Entity<RolModulo>(entity =>
+    {
+        entity.ToTable("RolesModulos");
+        entity.HasKey(rm => new { rm.RolId, rm.ModuloId }); 
 
-        // Aquí es donde mapeamos a la Vista que mencionaste (VW_Usuario)
-        // para que EF sepa que NO debe intentar crear una tabla con ese nombre
-        modelBuilder.Entity<Usuario>()
-            .ToTable("Usuarios"); // Cambia el nombre feo 'AspNetUsers' por 'Usuarios'
-    }
+        entity.HasOne(rm => rm.Rol)
+              .WithMany(r => r.PermisosModulos)
+              .HasForeignKey(rm => rm.RolId);
+
+        entity.HasOne(rm => rm.Modulo)
+              .WithMany()
+              .HasForeignKey(rm => rm.ModuloId);
+    });
+
+    modelBuilder.Entity<Usuario>(entity => {
+        entity.ToTable("Usuarios");
+        entity.HasOne(u => u.Rol).WithMany()
+              .HasForeignKey(u => u.RolId)
+              .OnDelete(DeleteBehavior.Restrict);
+    });
+    
+    modelBuilder.Entity<Rol>().ToTable("Roles");
+    modelBuilder.Entity<IdentityUserRole<int>>().ToTable("UsuariosRoles");
+    modelBuilder.Entity<IdentityUserClaim<int>>().ToTable("UsuariosClaims");
+    modelBuilder.Entity<IdentityUserLogin<int>>().ToTable("UsuariosLogins");
+    modelBuilder.Entity<IdentityRoleClaim<int>>().ToTable("RolesClaims");
+    modelBuilder.Entity<IdentityUserToken<int>>().ToTable("UsuariosTokens");
+}
 }

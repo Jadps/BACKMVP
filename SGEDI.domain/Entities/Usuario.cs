@@ -2,7 +2,7 @@
 
 namespace SGEDI.Domain.Entities;
 
-public class Usuario : IdentityUser
+public class Usuario : IdentityUser<int>
 {
     public string Nombre { get; set; } = string.Empty;
     public string PrimerApellido { get; set; } = string.Empty;
@@ -11,6 +11,7 @@ public class Usuario : IdentityUser
 
     public int? PersonalID { get; set; }
     public int? RolId { get; set; }
+    public virtual Rol? Rol { get; set; }
     public int CatStatusAccountId { get; set; }
     public int? UbicacionId { get; set; }
 

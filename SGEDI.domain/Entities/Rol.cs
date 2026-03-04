@@ -6,10 +6,10 @@ using Microsoft.AspNetCore.Identity;
 
 namespace SGEDI.Domain.Entities;
 
-public class Rol : IdentityRole
+public class Rol : IdentityRole<int>
 {
-    // IdentityRole ya trae el Id (string) y Name
-    // Aquí puedes agregar campos extras si tu SQL los tenía
     public string? Descripcion { get; set; }
     public bool Borrado { get; set; }
+    public virtual ICollection<RolModulo> PermisosModulos { get; set; } = new List<RolModulo>();
 }
+

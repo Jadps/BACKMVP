@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="SGEDI.Application/SGEDI.Application.csproj" />
+  <Project Path="SGEDI.domain/SGEDI.Domain.csproj" />
+  <Project Path="SGEDI.Infrastructure/SGEDI.Infrastructure.csproj" />
+  <Project Path="SGEDI.WebAPI/SGEDI.WebAPI.csproj" />
+</Solution>

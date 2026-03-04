@@ -1,0 +1,6 @@
+@SGEDI.WebAPI_HostAddress = http://localhost:5095
+
+GET {{SGEDI.WebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -19,7 +19,7 @@ namespace SGEDI.Infrastructure.Services.Catalogos.Providers
             return await ProyectarCatalogo(
                 _db.Users.Where(u => !u.Borrado),
                 u => u.Id,
-                u => $"{u.Nombre} {u.PrimerApellido} {u.SegundoApellido}".Trim()
+                u => (u.Nombre + " " + u.PrimerApellido + " " + u.SegundoApellido).Trim()
             );
         }
     }

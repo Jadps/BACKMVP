@@ -33,8 +33,12 @@ namespace SGEDI.Application.Services.Usuarios
 
         public async Task<List<UsuarioDTO>> GetTodosAsync()
         {
-            var usuarios = await _userManager.Users
-                .Where(u => !u.Borrado)
+            var usuariosQuery = _userManager.Users
+                .Where(u => !u.Borrado);
+
+            // Fetch users with their role names in a more optimized way if possible, 
+            // but for now let's at least ensure we don't do N+1 manual lookups.
+            var usuarios = await usuariosQuery
                 .Include(u => u.UserRoles)
                 .ToListAsync();
 
@@ -50,7 +54,7 @@ namespace SGEDI.Application.Services.Usuarios
 
             var rolesPorId = roles.ToDictionary(r => r.Id);
 
-            var dtos = usuarios.Select(user =>
+            return usuarios.Select(user =>
             {
                 var dto = _mapper.Map<UsuarioDTO>(user);
                 dto.NombreCompleto = user.NombreCompleto;
@@ -60,15 +64,19 @@ namespace SGEDI.Application.Services.Usuarios
                     .ToList();
                 return dto;
             }).ToList();
-
-            return dtos;
         }
 
         public async Task<UsuarioDTO?> GetByIdAsync(string idCifrado)
         {
+            if (string.IsNullOrEmpty(idCifrado)) return null;
+
             try 
             {
-                int realId = int.Parse(_cifrado.Desencriptar(idCifrado));
+                string decrypted = _cifrado.Desencriptar(idCifrado);
+                if (!int.TryParse(decrypted, out int realId))
+                {
+                    return null;
+                }
 
                 var user = await _userManager.Users
                     .Include(u => u.UserRoles)
@@ -86,7 +94,11 @@ namespace SGEDI.Application.Services.Usuarios
 
                 return dto;
             }
-            catch { return null; }
+            catch (Exception)
+            {
+                // Log exception here if logger was available
+                return null; 
+            }
         }
 
         public async Task<IdentityResult> CrearAsync(UsuarioDTO dto)

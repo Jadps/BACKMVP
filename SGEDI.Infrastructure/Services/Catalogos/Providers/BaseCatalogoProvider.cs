@@ -26,14 +26,18 @@ namespace SGEDI.Infrastructure.Services.Catalogos.Providers
 
         protected async Task<List<CatalogoItemDTO>> ProyectarCatalogo<T>(
             IQueryable<T> query,
-            System.Func<T, int> idSelector,
-            System.Func<T, string> nombreSelector)
+            System.Linq.Expressions.Expression<System.Func<T, int>> idSelector,
+            System.Linq.Expressions.Expression<System.Func<T, string>> nombreSelector)
         {
-            var data = await query.ToListAsync();
-            return data.Select(x => new CatalogoItemDTO(
-                _cifrado.Encriptar(idSelector(x).ToString()),
-                nombreSelector(x)
-            )).ToList();
+            return await query.Select(x => new CatalogoItemDTO
+            {
+                Id = idSelector.Compile()(x).ToString(), // Temporally till we find a better way for EF core to handle the encryption inside select or just map and encrypt after
+                Descripcion = nombreSelector.Compile()(x)
+            }).ToListAsync()
+            .ContinueWith(t => t.Result.Select(x => {
+                x.Id = _cifrado.Encriptar(x.Id);
+                return x;
+            }).ToList());
         }
     }
 }

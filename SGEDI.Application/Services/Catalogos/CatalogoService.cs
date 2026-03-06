@@ -60,7 +60,7 @@ namespace SGEDI.Application.Services.Catalogos
         {
             var modulos = await _moduloRepository.GetAllAsync(
                 filter: m => m.PadreId == null,
-                includeProperties: "SubModulos"
+                m => m.SubModulos
             );
 
             return _mapper.Map<List<ModuloDTO>>(modulos);

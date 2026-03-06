@@ -31,7 +31,7 @@ namespace SGEDI.WebAPI.Controllers
         [HttpGet("modulos")]
         public async Task<IActionResult> GetModulos() => Ok(await _service.GetModulosMenuAsync());
 
-        [HttpGet("{nombre}")]
+        [HttpGet("c{nombre}")]
         public async Task<ActionResult<List<CatalogoItemDTO>>> GetGeneric(string nombre)
         {
             var items = await _genericService.GetCatalogoAsync(nombre);

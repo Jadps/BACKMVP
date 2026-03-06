@@ -16,11 +16,32 @@ namespace SGEDI.WebAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Get() => Ok(await _service.GetTodosAsync());
 
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(string id)
+        {
+            var user = await _service.GetByIdAsync(id);
+            return user != null ? Ok(user) : NotFound();
+        }
+
         [HttpPost]
         public async Task<IActionResult> Post(UsuarioDTO dto)
         {
             var result = await _service.CrearAsync(dto);
             return result.Succeeded ? Ok() : BadRequest(result.Errors);
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> Put(UsuarioDTO dto)
+        {
+            var result = await _service.ActualizarAsync(dto);
+            return result.Succeeded ? Ok() : BadRequest(result.Errors);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(string id)
+        {
+            var borrado = await _service.BorrarAsync(id);
+            return borrado ? Ok() : NotFound();
         }
     }
 }

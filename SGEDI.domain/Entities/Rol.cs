@@ -10,6 +10,8 @@ public class Rol : IdentityRole<int>
 {
     public string? Descripcion { get; set; }
     public bool Borrado { get; set; }
+    public int? TenantId { get; set; }
+    public virtual Tenant? Tenant { get; set; }
     public virtual ICollection<RolModulo> PermisosModulos { get; set; } = new List<RolModulo>();
 }
 

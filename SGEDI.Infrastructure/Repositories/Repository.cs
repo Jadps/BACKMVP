@@ -55,12 +55,17 @@ namespace SGEDI.Infrastructure.Repositories
         public async Task AddAsync(T entity)
         {
             await dbSet.AddAsync(entity);
-            await _db.SaveChangesAsync(); 
+        }
+
+        public void Update(T entity)
+        {
+            dbSet.Update(entity);
         }
 
         public void Remove(T entity)
         {
             dbSet.Remove(entity);
         }
+
     }
 }

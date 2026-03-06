@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-using SGEDI.Domain.Cifrado;
+﻿using SGEDI.Domain.Cifrado;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -8,15 +7,15 @@ public class CifradoService : ICifradoService
     private readonly byte[] _key;
     private readonly byte[] _iv;
 
-    public CifradoService(IConfiguration config)
+    public CifradoService(CifradoOptions options)
     {
-        var secret = config["Config:SecretKey"];
+        var secret = options.SecretKey;
 
         if (string.IsNullOrEmpty(secret))
-            throw new Exception("No hay SecretKey en el appsettings.json");
+            throw new Exception("No hay SecretKey en la configuración");
 
         _key = Encoding.UTF8.GetBytes(secret.PadRight(32).Substring(0, 32));
-        _iv = Encoding.UTF8.GetBytes(secret.PadRight(16).Substring(0, 16));
+        _iv  = Encoding.UTF8.GetBytes(secret.PadRight(16).Substring(0, 16));
     }
 
     public string Encriptar(string texto)
@@ -34,7 +33,7 @@ public class CifradoService : ICifradoService
         }
 
         return Convert.ToBase64String(ms.ToArray())
-            .Replace('/', '-').Replace('+', '_').Replace("=", ""); 
+            .Replace('/', '-').Replace('+', '_').Replace("=", "");
     }
 
     public string Desencriptar(string textoCifrado)
@@ -43,7 +42,7 @@ public class CifradoService : ICifradoService
         switch (textoCifrado.Length % 4)
         {
             case 2: textoCifrado += "=="; break;
-            case 3: textoCifrado += "="; break;
+            case 3: textoCifrado += "=";  break;
         }
 
         using var aes = Aes.Create();

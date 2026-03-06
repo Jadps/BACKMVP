@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace SGEDI.Application.Services.Catalogos
 {
@@ -33,7 +34,7 @@ namespace SGEDI.Application.Services.Catalogos
 
         public async Task<List<RolDTO>> GetRolesAsync()
         {
-            var roles = _roleManager.Roles.Where(r => !r.Borrado).ToList();
+            var roles = await _roleManager.Roles.Where(r => !r.Borrado).ToListAsync();
             return _mapper.Map<List<RolDTO>>(roles);
         }
 

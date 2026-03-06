@@ -11,6 +11,7 @@ namespace SGEDI.Domain.Interfaces
         Task<List<T>> GetAllAsync(Expression<Func<T, bool>>? filter = null, string? includeProperties = null);
         Task<T?> GetFirstOrDefaultAsync(Expression<Func<T, bool>> filter, string? includeProperties = null);
         Task AddAsync(T entity);
+        void Update(T entity);
         void Remove(T entity);
     }
 }

@@ -14,7 +14,7 @@ public static class DependencyInjection
         
         services.AddScoped<Interfaces.Catalogos.ICatalogoService, Services.Catalogos.CatalogoService>();
         
-        services.AddScoped<SGEDI.Domain.Cifrado.ICifradoService, CifradoService>();
+        services.AddScoped<Interfaces.ITenantService, Services.TenantService>();
 
         return services;
     }

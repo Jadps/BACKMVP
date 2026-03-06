@@ -8,6 +8,7 @@ public class ApplicationDbContext : IdentityDbContext<Usuario, Rol, int>
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
     public DbSet<Modulo> Modulos => Set<Modulo>();
+    public DbSet<Tenant> Tenants => Set<Tenant>();
 
 protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
@@ -40,12 +41,30 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 
     modelBuilder.Entity<Usuario>(entity => {
         entity.ToTable("Usuarios");
-        entity.HasOne(u => u.Rol).WithMany()
-              .HasForeignKey(u => u.RolId)
+        
+        entity.HasOne(u => u.Tenant)
+              .WithMany(t => t.Usuarios)
+              .HasForeignKey(u => u.TenantId)
               .OnDelete(DeleteBehavior.Restrict);
+
+        entity.HasMany(u => u.UserRoles)
+              .WithOne()
+              .HasForeignKey(ur => ur.UserId)
+              .IsRequired();
     });
     
-    modelBuilder.Entity<Rol>().ToTable("Roles");
+    modelBuilder.Entity<Tenant>(entity => {
+        entity.ToTable("Tenants");
+        entity.HasKey(t => t.Id);
+    });
+    
+    modelBuilder.Entity<Rol>(entity => {
+        entity.ToTable("Roles");
+        entity.HasOne(r => r.Tenant)
+              .WithMany(t => t.Roles)
+              .HasForeignKey(r => r.TenantId)
+              .OnDelete(DeleteBehavior.Restrict);
+    });
     modelBuilder.Entity<IdentityUserRole<int>>().ToTable("UsuariosRoles");
     modelBuilder.Entity<IdentityUserClaim<int>>().ToTable("UsuariosClaims");
     modelBuilder.Entity<IdentityUserLogin<int>>().ToTable("UsuariosLogins");

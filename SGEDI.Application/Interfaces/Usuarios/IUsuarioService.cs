@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Identity;
-using SGEDI.Application.DTOs;
-using System;
+﻿using SGEDI.Application.DTOs;
+using SGEDI.Application.Interfaces;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace SGEDI.Application.Interfaces.Usuarios
 {
@@ -10,8 +9,8 @@ namespace SGEDI.Application.Interfaces.Usuarios
     {
         Task<List<UsuarioDTO>> GetTodosAsync();
         Task<UsuarioDTO?> GetByIdAsync(string idCifrado);
-        Task<IdentityResult> CrearAsync(UsuarioDTO dto);
-        Task<IdentityResult> ActualizarAsync(UsuarioDTO dto);
+        Task<ApplicationResult> CrearAsync(UsuarioDTO dto);
+        Task<ApplicationResult> ActualizarAsync(UsuarioDTO dto);
         Task<bool> BorrarAsync(string idCifrado);
     }
 }

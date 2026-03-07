@@ -30,6 +30,8 @@ public static class DependencyInjection
 
         services.AddScoped(typeof(SGEDI.Domain.Interfaces.IRepository<>), typeof(SGEDI.Infrastructure.Repositories.Repository<>));
 
+        services.AddScoped<SGEDI.Application.Interfaces.IIdentityService, SGEDI.Infrastructure.Services.IdentityService>();
+
         services.AddScoped<SGEDI.Domain.Interfaces.IUnitOfWork, UnitOfWork>();
 
         services.AddScoped<SGEDI.Application.Interfaces.Catalogos.IGenericCatalogService, Services.Catalogos.GenericCatalogService>();

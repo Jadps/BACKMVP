@@ -29,6 +29,21 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         return await _db.SaveChangesAsync();
     }
 
+    public async Task BeginTransactionAsync()
+    {
+        await _db.Database.BeginTransactionAsync();
+    }
+
+    public async Task CommitTransactionAsync()
+    {
+        await _db.Database.CommitTransactionAsync();
+    }
+
+    public async Task RollbackTransactionAsync()
+    {
+        await _db.Database.RollbackTransactionAsync();
+    }
+
     public void Dispose()
     {
         _db.Dispose();

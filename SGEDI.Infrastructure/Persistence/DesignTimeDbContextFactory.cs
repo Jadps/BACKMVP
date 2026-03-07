@@ -5,11 +5,18 @@ using System.IO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
+using SGEDI.Application.Interfaces;
 
 namespace SGEDI.Infrastructure.Persistence;
 
 public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
 {
+    private class DesignTimeCurrentTenantService : ICurrentTenantService
+    {
+        public int? TenantId => null;
+        public void SetTenantId(int tenantId) { }
+    }
+
     public ApplicationDbContext CreateDbContext(string[] args)
     {
         IConfigurationRoot configuration = new ConfigurationBuilder()
@@ -22,6 +29,6 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
 
         builder.UseNpgsql(connectionString);
 
-        return new ApplicationDbContext(builder.Options);
+        return new ApplicationDbContext(builder.Options, new DesignTimeCurrentTenantService());
     }
 }

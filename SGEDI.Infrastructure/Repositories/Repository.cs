@@ -11,20 +11,18 @@ namespace SGEDI.Infrastructure.Repositories
 {
     public class Repository<T> : IRepository<T> where T : class
     {
-        private readonly ApplicationDbContext _db;
-        internal DbSet<T> dbSet;
+        protected readonly DbSet<T> DbSet;
 
         public Repository(ApplicationDbContext db)
         {
-            _db = db;
-            this.dbSet = _db.Set<T>();
+            this.DbSet = db.Set<T>();
         }
 
         public async Task<List<T>> GetAllAsync(
             Expression<Func<T, bool>>? filter = null, 
             params Expression<Func<T, object>>[] includeProperties)
         {
-            IQueryable<T> query = dbSet;
+            IQueryable<T> query = DbSet;
             if (filter != null)
             {
                 query = query.Where(filter);
@@ -42,7 +40,7 @@ namespace SGEDI.Infrastructure.Repositories
             Expression<Func<T, bool>> filter, 
             params Expression<Func<T, object>>[] includeProperties)
         {
-            IQueryable<T> query = dbSet;
+            IQueryable<T> query = DbSet;
             query = query.Where(filter);
             
             foreach (var includeProp in includeProperties)
@@ -55,12 +53,12 @@ namespace SGEDI.Infrastructure.Repositories
 
         public async Task AddAsync(T entity)
         {
-            await dbSet.AddAsync(entity);
+            await DbSet.AddAsync(entity);
         }
 
         public void Update(T entity)
         {
-            dbSet.Update(entity);
+            DbSet.Update(entity);
         }
 
         public void Remove(T entity)
@@ -68,11 +66,11 @@ namespace SGEDI.Infrastructure.Repositories
             if (entity is ISoftDelete softDeleteEntity)
             {
                 softDeleteEntity.Borrado = true;
-                dbSet.Update(entity);
+                DbSet.Update(entity);
             }
             else
             {
-                dbSet.Remove(entity);
+                DbSet.Remove(entity);
             }
         }
 

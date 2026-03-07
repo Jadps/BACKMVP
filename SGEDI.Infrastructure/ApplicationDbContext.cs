@@ -2,10 +2,19 @@
 using Microsoft.EntityFrameworkCore;
 using SGEDI.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
+using SGEDI.Application.Interfaces;
+
 namespace SGEDI.Infrastructure.Persistence;
 public class ApplicationDbContext : IdentityDbContext<Usuario, Rol, int>
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+    private readonly int? _tenantId;
+
+    public ApplicationDbContext(
+        DbContextOptions<ApplicationDbContext> options,
+        ICurrentTenantService currentTenantService) : base(options) 
+    { 
+        _tenantId = currentTenantService.TenantId;
+    }
 
     public DbSet<Modulo> Modulos => Set<Modulo>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
@@ -52,13 +61,13 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
               .HasForeignKey(ur => ur.UserId)
               .IsRequired();
 
-        entity.HasQueryFilter(u => !u.Borrado);
+        entity.HasQueryFilter(u => !u.Borrado && (!_tenantId.HasValue || u.TenantId == _tenantId.Value));
     });
     
     modelBuilder.Entity<Tenant>(entity => {
         entity.ToTable("Tenants");
         entity.HasKey(t => t.Id);
-        entity.HasQueryFilter(t => !t.Borrado);
+        entity.HasQueryFilter(t => !t.Borrado && (!_tenantId.HasValue || t.Id == _tenantId.Value));
     });
     
     modelBuilder.Entity<Rol>(entity => {
@@ -68,7 +77,7 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
               .HasForeignKey(r => r.TenantId)
               .OnDelete(DeleteBehavior.Restrict);
 
-        entity.HasQueryFilter(r => !r.Borrado);
+        entity.HasQueryFilter(r => !r.Borrado && (!_tenantId.HasValue || r.TenantId == _tenantId.Value));
     });
     modelBuilder.Entity<IdentityUserRole<int>>().ToTable("UsuariosRoles");
     modelBuilder.Entity<IdentityUserClaim<int>>().ToTable("UsuariosClaims");

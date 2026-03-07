@@ -1,44 +1,36 @@
 using AutoMapper;
-using Microsoft.AspNetCore.Identity;
 using SGEDI.Application.DTOs;
+using SGEDI.Application.Exceptions;
+using SGEDI.Application.Interfaces;
+using SGEDI.Application.Interfaces.Usuarios;
 using SGEDI.Domain.Cifrado;
 using SGEDI.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using SGEDI.Application.Interfaces.Usuarios;
 
 namespace SGEDI.Application.Services.Usuarios
 {
     public class UsuarioService : IUsuarioService
     {
-        private readonly UserManager<Usuario> _userManager;
-        private readonly RoleManager<Rol> _roleManager;
+        private readonly IIdentityService _identityService;
         private readonly IMapper _mapper;
         private readonly ICifradoService _cifrado;
 
         public UsuarioService(
-            UserManager<Usuario> userManager, 
-            RoleManager<Rol> roleManager,
+            IIdentityService identityService,
             IMapper mapper, 
             ICifradoService cifrado)
         {
-            _userManager = userManager;
-            _roleManager = roleManager;
+            _identityService = identityService;
             _mapper = mapper;
             _cifrado = cifrado;
         }
 
         public async Task<List<UsuarioDTO>> GetTodosAsync()
         {
-            var usuariosQuery = _userManager.Users
-                .Where(u => !u.Borrado);
-
-            var usuarios = await usuariosQuery
-                .Include(u => u.UserRoles)
-                .ToListAsync();
+            var usuarios = await _identityService.GetUsuariosActivosAsync();
 
             var roleIds = usuarios
                 .SelectMany(u => u.UserRoles)
@@ -46,10 +38,7 @@ namespace SGEDI.Application.Services.Usuarios
                 .Distinct()
                 .ToList();
 
-            var roles = await _roleManager.Roles
-                .Where(r => roleIds.Contains(r.Id))
-                .ToListAsync();
-
+            var roles = await _identityService.GetRolesByIdsAsync(roleIds);
             var rolesPorId = roles.ToDictionary(r => r.Id);
 
             return usuarios.Select(user =>
@@ -68,118 +57,83 @@ namespace SGEDI.Application.Services.Usuarios
         {
             if (string.IsNullOrEmpty(idCifrado)) return null;
 
-            try 
+            string decrypted = _cifrado.Desencriptar(idCifrado);
+            if (!int.TryParse(decrypted, out int realId))
             {
-                string decrypted = _cifrado.Desencriptar(idCifrado);
-                if (!int.TryParse(decrypted, out int realId))
-                {
-                    return null;
-                }
-
-                var user = await _userManager.Users
-                    .Include(u => u.UserRoles)
-                    .FirstOrDefaultAsync(u => u.Id == realId && !u.Borrado);
-                
-                if (user == null) return null;
-
-                var roleIds = user.UserRoles.Select(ur => ur.RoleId).ToList();
-                var roles = await _roleManager.Roles
-                    .Where(r => roleIds.Contains(r.Id))
-                    .ToListAsync();
-
-                var dto = _mapper.Map<UsuarioDTO>(user);
-                dto.Roles = roles.Select(r => _mapper.Map<RolDTO>(r)).ToList();
-
-                return dto;
+                throw new ValidationException("El identificador del usuario proporcionado tiene un formato incorrecto.");
             }
-            catch (Exception) { return null; }
+
+            var user = await _identityService.GetUsuarioActivoByIdAsync(realId);
+            
+            if (user == null) 
+            {
+                throw new NotFoundException("El usuario solicitado no fue encontrado.");
+            }
+
+            var roleIds = user.UserRoles.Select(ur => ur.RoleId).ToList();
+            var roles = await _identityService.GetRolesByIdsAsync(roleIds);
+
+            var dto = _mapper.Map<UsuarioDTO>(user);
+            dto.Roles = roles.Select(r => _mapper.Map<RolDTO>(r)).ToList();
+
+            return dto;
         }
 
-        public async Task<IdentityResult> CrearAsync(UsuarioDTO dto)
+        public async Task<ApplicationResult> CrearAsync(UsuarioDTO dto)
         {
             var usuario = _mapper.Map<Usuario>(dto);
             usuario.UserName = dto.Email;
             
-            var result = await _userManager.CreateAsync(usuario, dto.Password!);
-
-            if (result.Succeeded && dto.Roles.Count > 0)
-            {
-                await SyncRolesAsync(usuario, dto.Roles);
-            }
+            var nombresRolesNuevos = await ObtenerNombresRolesAsync(dto.Roles);
             
-            return result;
+            return await _identityService.CrearUsuarioAsync(usuario, dto.Password!, nombresRolesNuevos);
         }
 
-        public async Task<IdentityResult> ActualizarAsync(UsuarioDTO dto)
+        public async Task<ApplicationResult> ActualizarAsync(UsuarioDTO dto)
         {
-            try 
+            int realId = int.Parse(_cifrado.Desencriptar(dto.Id!));
+            var user = await _identityService.GetUsuarioActivoByIdAsync(realId);
+
+            if (user == null)
             {
-                int realId = int.Parse(_cifrado.Desencriptar(dto.Id!));
-                var user = await _userManager.FindByIdAsync(realId.ToString());
-
-                if (user == null)
-                {
-                    return IdentityResult.Failed(new IdentityError { Description = "Usuario no encontrado" });
-                }
-
-                _mapper.Map(dto, user);
-                var result = await _userManager.UpdateAsync(user);
-
-                if (result.Succeeded)
-                {
-                    await SyncRolesAsync(user, dto.Roles);
-                }
-
-                return result;
+                throw new NotFoundException("El usuario que intentas actualizar no existe.");
             }
-            catch (Exception ex)
-            {
-                return IdentityResult.Failed(new IdentityError { Description = ex.Message });
-            }
+
+            _mapper.Map(dto, user);
+            
+            var nombresRolesNuevos = await ObtenerNombresRolesAsync(dto.Roles);
+
+            return await _identityService.ActualizarUsuarioAsync(user, nombresRolesNuevos);
         }
 
         public async Task<bool> BorrarAsync(string idCifrado)
         {
-            try 
+            int realId = int.Parse(_cifrado.Desencriptar(idCifrado));
+            var success = await _identityService.BorrarUsuarioAsync(realId);
+            
+            if (!success)
             {
-                int realId = int.Parse(_cifrado.Desencriptar(idCifrado));
-                var user = await _userManager.FindByIdAsync(realId.ToString());
-
-                if (user == null) return false;
-
-                user.Borrado = true;
-                await _userManager.UpdateAsync(user);
-                return true;
+                throw new NotFoundException("El usuario especificado para borrar no fue encontrado.");
             }
-            catch { return false; }
+
+            return true;
         }
 
-        private async Task SyncRolesAsync(Usuario user, List<RolDTO> rolesDto)
+        private async Task<List<string>> ObtenerNombresRolesAsync(List<RolDTO> rolesDto)
         {
-            var rolesActuales = await _userManager.GetRolesAsync(user);
-            
-            if (rolesActuales.Count > 0)
-            {
-                await _userManager.RemoveFromRolesAsync(user, rolesActuales);
-            }
-
-            var nombresRolesNuevos = new List<string>();
+            var roleIdsToFind = new List<int>();
             foreach (var roleDto in rolesDto)
             {
                 if (roleDto.Id != null && int.TryParse(_cifrado.Desencriptar(roleDto.Id), out int roleId))
                 {
-                    var rol = await _roleManager.FindByIdAsync(roleId.ToString());
-                    if (rol != null && rol.Name != null)
-                    {
-                        nombresRolesNuevos.Add(rol.Name);
-                    }
+                    roleIdsToFind.Add(roleId);
                 }
             }
 
-            if (nombresRolesNuevos.Count > 0)
-            {
-                await _userManager.AddToRolesAsync(user, nombresRolesNuevos);
-            }
+            if (!roleIdsToFind.Any()) return new List<string>();
+
+            var rolesDb = await _identityService.GetRolesByIdsAsync(roleIdsToFind);
+            return rolesDb.Select(r => r.Name!).Where(n => !string.IsNullOrEmpty(n)).ToList();
         }
     }
 }

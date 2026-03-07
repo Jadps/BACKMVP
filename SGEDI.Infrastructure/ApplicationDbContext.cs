@@ -51,11 +51,14 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
               .WithOne()
               .HasForeignKey(ur => ur.UserId)
               .IsRequired();
+
+        entity.HasQueryFilter(u => !u.Borrado);
     });
     
     modelBuilder.Entity<Tenant>(entity => {
         entity.ToTable("Tenants");
         entity.HasKey(t => t.Id);
+        entity.HasQueryFilter(t => !t.Borrado);
     });
     
     modelBuilder.Entity<Rol>(entity => {
@@ -64,6 +67,8 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
               .WithMany(t => t.Roles)
               .HasForeignKey(r => r.TenantId)
               .OnDelete(DeleteBehavior.Restrict);
+
+        entity.HasQueryFilter(r => !r.Borrado);
     });
     modelBuilder.Entity<IdentityUserRole<int>>().ToTable("UsuariosRoles");
     modelBuilder.Entity<IdentityUserClaim<int>>().ToTable("UsuariosClaims");

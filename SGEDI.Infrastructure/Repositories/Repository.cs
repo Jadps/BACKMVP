@@ -65,7 +65,15 @@ namespace SGEDI.Infrastructure.Repositories
 
         public void Remove(T entity)
         {
-            dbSet.Remove(entity);
+            if (entity is ISoftDelete softDeleteEntity)
+            {
+                softDeleteEntity.Borrado = true;
+                dbSet.Update(entity);
+            }
+            else
+            {
+                dbSet.Remove(entity);
+            }
         }
 
     }

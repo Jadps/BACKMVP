@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
+using SGEDI.Domain.Interfaces;
+
 namespace SGEDI.Domain.Entities;
 
-public class Usuario : IdentityUser<int>
+public class Usuario : IdentityUser<int>, ISoftDelete
 {
     public string Nombre { get; set; } = string.Empty;
     public string PrimerApellido { get; set; } = string.Empty;

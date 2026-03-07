@@ -31,7 +31,7 @@ namespace SGEDI.Infrastructure.Services.Catalogos.Providers
         {
             return await query.Select(x => new CatalogoItemDTO
             {
-                Id = idSelector.Compile()(x).ToString(), // Temporally till we find a better way for EF core to handle the encryption inside select or just map and encrypt after
+                Id = idSelector.Compile()(x).ToString(),
                 Descripcion = nombreSelector.Compile()(x)
             }).ToListAsync()
             .ContinueWith(t => t.Result.Select(x => {

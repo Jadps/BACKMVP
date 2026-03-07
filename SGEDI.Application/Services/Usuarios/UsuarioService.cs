@@ -36,8 +36,6 @@ namespace SGEDI.Application.Services.Usuarios
             var usuariosQuery = _userManager.Users
                 .Where(u => !u.Borrado);
 
-            // Fetch users with their role names in a more optimized way if possible, 
-            // but for now let's at least ensure we don't do N+1 manual lookups.
             var usuarios = await usuariosQuery
                 .Include(u => u.UserRoles)
                 .ToListAsync();
@@ -94,11 +92,7 @@ namespace SGEDI.Application.Services.Usuarios
 
                 return dto;
             }
-            catch (Exception)
-            {
-                // Log exception here if logger was available
-                return null; 
-            }
+            catch (Exception) { return null; }
         }
 
         public async Task<IdentityResult> CrearAsync(UsuarioDTO dto)

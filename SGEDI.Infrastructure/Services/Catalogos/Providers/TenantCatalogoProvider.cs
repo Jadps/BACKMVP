@@ -17,7 +17,7 @@ namespace SGEDI.Infrastructure.Services.Catalogos.Providers
         public override async Task<List<CatalogoItemDTO>> ObtenerItemsAsync()
         {
             return await ProyectarCatalogo(
-                _db.Tenants.Where(t => t.Activo),
+                _db.Tenants.Where(t => !t.Borrado),
                 t => t.Id,
                 t => t.Nombre
             );

@@ -4,9 +4,11 @@ using System.Text;
 
 using Microsoft.AspNetCore.Identity;
 
+using SGEDI.Domain.Interfaces;
+
 namespace SGEDI.Domain.Entities;
 
-public class Rol : IdentityRole<int>
+public class Rol : IdentityRole<int>, ISoftDelete
 {
     public string? Descripcion { get; set; }
     public bool Borrado { get; set; }

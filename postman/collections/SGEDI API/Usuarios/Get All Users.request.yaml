@@ -1,0 +1,33 @@
+$kind: http-request
+name: 'Get All Users'
+method: GET
+url: '{{baseUrl}}/api/v1/users'
+order: 1000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response is an array', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.be.an('array');
+      });
+
+      pm.test('Each user has required fields', function () {
+          const json = pm.response.json();
+          if (json.length > 0) {
+              json.forEach(function (user) {
+                  pm.expect(user).to.have.property('userId');
+                  pm.expect(user).to.have.property('email');
+                  pm.expect(user).to.have.property('firstName');
+                  pm.expect(user).to.have.property('lastName');
+              });
+          }
+      });
+
+      pm.test('Response time is less than 2000ms', function () {
+          pm.expect(pm.response.responseTime).to.be.below(2000);
+      });

@@ -1,0 +1,4 @@
+$kind: collection
+name: Tenants
+description: 'Endpoints de gestión de tenants: consulta, actualización y eliminación.'
+order: 3000

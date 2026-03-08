@@ -1,0 +1,49 @@
+$kind: http-request
+name: 'Register New Tenant'
+method: POST
+url: '{{baseUrl}}/api/v1/onboarding/register'
+order: 1000
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: noauth
+body:
+  type: json
+  content: |-
+    {
+      "companyName": "Empresa Demo S.A.",
+      "adminEmail": "admin@empresademo.com",
+      "adminPassword": "Admin1234!",
+      "adminFirstName": "Juan",
+      "adminLastName": "Pérez",
+      "plan": "basic"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 201', function () {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test('Response has tenantId', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('tenantId');
+      });
+
+      pm.test('Response has admin user info', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('adminUser');
+      });
+
+      pm.test('Response time is less than 3000ms', function () {
+          pm.expect(pm.response.responseTime).to.be.below(3000);
+      });
+
+      // Guardar tenantId automáticamente
+      const json = pm.response.json();
+      if (json.tenantId) {
+          pm.collectionVariables.set('tenantId', json.tenantId);
+          console.log('tenantId guardado:', json.tenantId);
+      }

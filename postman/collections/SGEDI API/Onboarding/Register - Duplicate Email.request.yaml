@@ -1,0 +1,33 @@
+$kind: http-request
+name: 'Register - Duplicate Email'
+method: POST
+url: '{{baseUrl}}/api/v1/onboarding/register'
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: noauth
+body:
+  type: json
+  content: |-
+    {
+      "companyName": "Otra Empresa S.A.",
+      "adminEmail": "admin@empresademo.com",
+      "adminPassword": "Admin1234!",
+      "adminFirstName": "Pedro",
+      "adminLastName": "García",
+      "plan": "basic"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 409 Conflict', function () {
+          pm.response.to.have.status(409);
+      });
+
+      pm.test('Response has conflict error message', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('message');
+      });

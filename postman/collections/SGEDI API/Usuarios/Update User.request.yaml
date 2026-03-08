@@ -1,0 +1,33 @@
+$kind: http-request
+name: 'Update User'
+method: PUT
+url: '{{baseUrl}}/api/v1/users/{{userId}}'
+order: 5000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "firstName": "María Actualizada",
+      "lastName": "López García",
+      "role": "admin"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('User firstName was updated', function () {
+          const json = pm.response.json();
+          pm.expect(json.firstName).to.equal('María Actualizada');
+      });
+
+      pm.test('User lastName was updated', function () {
+          const json = pm.response.json();
+          pm.expect(json.lastName).to.equal('López García');
+      });

@@ -1,0 +1,4 @@
+$kind: collection
+name: Catalogos
+description: 'Endpoints de gestión de catálogos: CRUD completo y consulta de ítems.'
+order: 5000

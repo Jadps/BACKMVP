@@ -1,0 +1,34 @@
+$kind: http-request
+name: 'Refresh Token'
+method: POST
+url: '{{baseUrl}}/api/v1/auth/refresh'
+order: 5000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "token": "{{token}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response has new token', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('token');
+          pm.expect(json.token).to.be.a('string').and.not.empty;
+      });
+
+      // Actualizar token con el nuevo valor
+      const json = pm.response.json();
+      if (json.token) {
+          pm.collectionVariables.set('token', json.token);
+          console.log('Token actualizado');
+      }

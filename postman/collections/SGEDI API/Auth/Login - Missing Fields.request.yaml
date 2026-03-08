@@ -1,0 +1,28 @@
+$kind: http-request
+name: 'Login - Missing Fields'
+method: POST
+url: '{{baseUrl}}/api/v1/auth/login'
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "admin@sgedi.com"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 400', function () {
+          pm.response.to.have.status(400);
+      });
+
+      pm.test('Response has validation errors', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('errors').or.have.property('message');
+      });

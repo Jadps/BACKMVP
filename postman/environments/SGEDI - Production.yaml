@@ -1,0 +1,22 @@
+name: 'SGEDI - Production'
+values:
+  - key: baseUrl
+    value: 'https://api.sgedi.com'
+    enabled: true
+    type: default
+  - key: token
+    value: ''
+    enabled: true
+    type: default
+  - key: tenantId
+    value: ''
+    enabled: true
+    type: default
+  - key: userId
+    value: ''
+    enabled: true
+    type: default
+  - key: catalogId
+    value: ''
+    enabled: true
+    type: default

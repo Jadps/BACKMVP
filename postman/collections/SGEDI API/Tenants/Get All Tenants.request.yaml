@@ -1,0 +1,31 @@
+$kind: http-request
+name: 'Get All Tenants'
+method: GET
+url: '{{baseUrl}}/api/v1/tenants'
+order: 1000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response is an array', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.be.an('array');
+      });
+
+      pm.test('Response time is less than 2000ms', function () {
+          pm.expect(pm.response.responseTime).to.be.below(2000);
+      });
+
+      pm.test('Each tenant has required fields', function () {
+          const json = pm.response.json();
+          if (json.length > 0) {
+              json.forEach(function (tenant) {
+                  pm.expect(tenant).to.have.property('tenantId');
+                  pm.expect(tenant).to.have.property('name');
+              });
+          }
+      });

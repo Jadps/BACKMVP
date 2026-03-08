@@ -1,0 +1,4 @@
+$kind: collection
+name: Onboarding
+description: 'Endpoints de onboarding: registro de nuevos tenants en el sistema.'
+order: 2000

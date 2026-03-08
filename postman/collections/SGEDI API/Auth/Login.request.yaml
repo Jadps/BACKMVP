@@ -1,0 +1,50 @@
+$kind: http-request
+name: Login
+method: POST
+url: '{{baseUrl}}/api/v1/auth/login'
+order: 1000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "admin@sgedi.com",
+      "password": "Admin1234!"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response has token', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('token');
+          pm.expect(json.token).to.be.a('string').and.not.empty;
+      });
+
+      pm.test('Response has user info', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('user');
+      });
+
+      pm.test('Response time is less than 2000ms', function () {
+          pm.expect(pm.response.responseTime).to.be.below(2000);
+      });
+
+      // Guardar token y userId automáticamente
+      const json = pm.response.json();
+      if (json.token) {
+          pm.collectionVariables.set('token', json.token);
+          console.log('Token guardado en variables de colección');
+      }
+      if (json.user && json.user.userId) {
+          pm.collectionVariables.set('userId', json.user.userId);
+          console.log('userId guardado:', json.user.userId);
+      }

@@ -1,0 +1,4 @@
+$kind: collection
+name: Auth
+description: 'Endpoints de autenticación: login, logout y refresh de token.'
+order: 1000

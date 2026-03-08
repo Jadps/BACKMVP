@@ -1,0 +1,17 @@
+$kind: http-request
+name: 'Get Tenant - Not Found'
+method: GET
+url: '{{baseUrl}}/api/v1/tenants/00000000-0000-0000-0000-000000000000'
+order: 3000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 404', function () {
+          pm.response.to.have.status(404);
+      });
+
+      pm.test('Response has error message', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('message');
+      });

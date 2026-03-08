@@ -1,0 +1,4 @@
+$kind: collection
+name: Usuarios
+description: 'Endpoints de gestión de usuarios: CRUD completo y control de acceso.'
+order: 4000

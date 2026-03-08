@@ -1,0 +1,48 @@
+$kind: http-request
+name: 'Create User'
+method: POST
+url: '{{baseUrl}}/api/v1/users'
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "nuevo.usuario@sgedi.com",
+      "password": "User1234!",
+      "firstName": "María",
+      "lastName": "López",
+      "role": "user",
+      "tenantId": "{{tenantId}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 201', function () {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test('Response has userId', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('userId');
+      });
+
+      pm.test('Response has correct email', function () {
+          const json = pm.response.json();
+          pm.expect(json.email).to.equal('nuevo.usuario@sgedi.com');
+      });
+
+      pm.test('Password is not returned in response', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.not.have.property('password');
+      });
+
+      // Guardar userId del nuevo usuario
+      const json = pm.response.json();
+      if (json.userId) {
+          pm.collectionVariables.set('userId', json.userId);
+          console.log('userId guardado:', json.userId);
+      }

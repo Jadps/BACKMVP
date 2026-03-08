@@ -1,0 +1,35 @@
+$kind: http-request
+name: 'Register - Missing Required Fields'
+method: POST
+url: '{{baseUrl}}/api/v1/onboarding/register'
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: noauth
+body:
+  type: json
+  content: |-
+    {
+      "companyName": "Empresa Incompleta"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 400', function () {
+          pm.response.to.have.status(400);
+      });
+
+      pm.test('Response has validation errors', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('errors').or.have.property('message');
+      });
+
+      pm.test('Validation errors mention required fields', function () {
+          const body = pm.response.text();
+          pm.expect(body).to.satisfy(function (b) {
+              return b.includes('email') || b.includes('password') || b.includes('required');
+          });
+      });

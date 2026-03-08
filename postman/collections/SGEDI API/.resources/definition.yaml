@@ -1,0 +1,36 @@
+$kind: collection
+name: SGEDI API
+description: |-
+  # SGEDI API
+
+  Colección principal para la API del sistema SGEDI. Incluye endpoints de autenticación, onboarding, gestión de tenants, usuarios y catálogos.
+
+  ## Variables de colección
+  - `baseUrl`: URL base de la API (sobreescrita por el entorno activo)
+  - `token`: JWT Bearer Token (se establece automáticamente al hacer login)
+  - `tenantId`: ID del tenant activo
+  - `userId`: ID del usuario activo
+
+  ## Autenticación
+  Todas las solicitudes usan Bearer Token con `{{token}}`. El token se obtiene automáticamente al ejecutar el endpoint de Login.
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+variables:
+  - key: baseUrl
+    value: 'http://localhost:5000'
+    description: URL base de la API
+  - key: token
+    value: ''
+    description: JWT Bearer Token (se establece al hacer login)
+  - key: tenantId
+    value: ''
+    description: ID del tenant activo
+  - key: userId
+    value: ''
+    description: ID del usuario activo
+  - key: catalogId
+    value: ''
+    description: ID del catálogo activo

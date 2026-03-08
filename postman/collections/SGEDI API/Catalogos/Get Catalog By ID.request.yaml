@@ -1,0 +1,22 @@
+$kind: http-request
+name: 'Get Catalog By ID'
+method: GET
+url: '{{baseUrl}}/api/v1/catalogs/{{catalogId}}'
+order: 2000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response has catalogId', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('catalogId');
+      });
+
+      pm.test('Response has name', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('name');
+      });

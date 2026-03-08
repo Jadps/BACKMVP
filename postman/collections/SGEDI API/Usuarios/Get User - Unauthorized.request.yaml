@@ -1,0 +1,19 @@
+$kind: http-request
+name: 'Get User - Unauthorized'
+method: GET
+url: '{{baseUrl}}/api/v1/users/{{userId}}'
+order: 7000
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 401 Unauthorized', function () {
+          pm.response.to.have.status(401);
+      });
+
+      pm.test('Response has unauthorized error message', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('message');
+      });

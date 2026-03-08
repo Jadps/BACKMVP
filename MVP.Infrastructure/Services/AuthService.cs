@@ -25,18 +25,18 @@ public class AuthService : IAuthService
         _configuration = configuration;
     }
 
-    public async Task<AuthResponseDTO?> LoginAsync(LoginDTO model)
+    public async Task<ApplicationResult<AuthResponseDTO>> LoginAsync(LoginDTO model)
     {
         var user = await _userManager.FindByNameAsync(model.Email);
         
         if (user != null && !user.Borrado && await _userManager.CheckPasswordAsync(user, model.Password))
         {
-            return await GenerarYAsignarTokensAsync(user);
+            return ApplicationResult<AuthResponseDTO>.Success(await GenerarYAsignarTokensAsync(user));
         }
-        return null;
+        return ApplicationResult<AuthResponseDTO>.Failure(new[] { "Email o contraseña incorrecta." }, ErrorType.Unauthorized);
     }
 
-    public async Task LogoutAsync(string? userEmail)
+    public async Task<ApplicationResult> LogoutAsync(string? userEmail)
     {
         if (!string.IsNullOrEmpty(userEmail))
         {
@@ -48,18 +48,19 @@ public class AuthService : IAuthService
                 await _userManager.UpdateAsync(user);
             }
         }
+        return ApplicationResult.Success();
     }
 
-    public async Task<AuthResponseDTO?> RefreshTokenAsync(RefreshTokenRequestDTO model)
+    public async Task<ApplicationResult<AuthResponseDTO>> RefreshTokenAsync(RefreshTokenRequestDTO model)
     {
         var user = await _userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == model.RefreshToken);
         
         if (user == null || user.Borrado || user.RefreshTokenExpiration <= DateTime.UtcNow)
         {
-            return null;
+            return ApplicationResult<AuthResponseDTO>.Failure(new[] { "Refresh Token inválido o expirado." }, ErrorType.Unauthorized);
         }
 
-        return await GenerarYAsignarTokensAsync(user);
+        return ApplicationResult<AuthResponseDTO>.Success(await GenerarYAsignarTokensAsync(user));
     }
 
     private async Task<AuthResponseDTO> GenerarYAsignarTokensAsync(Usuario user)

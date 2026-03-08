@@ -23,13 +23,19 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDTO model)
     {
-        var tokenResponse = await _authService.LoginAsync(model);
+        var result = await _authService.LoginAsync(model);
         
-        if (tokenResponse != null)
+        if (result.Succeeded)
         {
-            return Ok(tokenResponse);
+            return Ok(result.Value);
         }
-        return Unauthorized(new { message = "Email o contraseña incorrecta." });
+
+        if (result.ErrorType == ErrorType.Unauthorized)
+        {
+            return Unauthorized(new { message = result.Errors.FirstOrDefault() ?? "No autorizado." });
+        }
+
+        return BadRequest(new { errors = result.Errors });
     }
 
     [Authorize]
@@ -37,22 +43,32 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Logout()
     {
         var userEmail = User.Identity?.Name;
-        await _authService.LogoutAsync(userEmail);
+        var result = await _authService.LogoutAsync(userEmail);
         
-        return Ok(new { message = "Sesión cerrada exitosamente (Refresh Token revocado)." });
+        if (result.Succeeded)
+        {
+            return Ok(new { message = "Sesión cerrada exitosamente (Refresh Token revocado)." });
+        }
+
+        return BadRequest(new { errors = result.Errors });
     }
 
     [AllowAnonymous]
     [HttpPost("refresh-token")]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDTO model)
     {
-        var tokenResponse = await _authService.RefreshTokenAsync(model);
+        var result = await _authService.RefreshTokenAsync(model);
         
-        if (tokenResponse != null)
+        if (result.Succeeded)
         {
-            return Ok(tokenResponse);
+            return Ok(result.Value);
         }
 
-        return Unauthorized(new { message = "Refresh Token inválido o expirado." });
+        if (result.ErrorType == ErrorType.Unauthorized)
+        {
+            return Unauthorized(new { message = result.Errors.FirstOrDefault() ?? "No autorizado." });
+        }
+
+        return BadRequest(new { errors = result.Errors });
     }
 }

@@ -26,6 +26,9 @@ public static class DependencyInjection
 
         services.AddScoped(typeof(MVP.Domain.Interfaces.IRepository<>), typeof(MVP.Infrastructure.Repositories.Repository<>));
 
+        services.Configure<MVP.Infrastructure.Configuration.SftpStorageOptions>(configuration.GetSection(MVP.Infrastructure.Configuration.SftpStorageOptions.SectionName));
+        services.AddScoped<MVP.Application.Interfaces.IFileStorageService, MVP.Infrastructure.Services.SftpStorageService>();
+
         services.AddScoped<MVP.Application.Interfaces.IIdentityService, MVP.Infrastructure.Services.IdentityService>();
         services.AddScoped<MVP.Application.Interfaces.IAuthService, MVP.Infrastructure.Services.AuthService>();
 

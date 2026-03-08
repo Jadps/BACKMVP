@@ -158,13 +158,13 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
               .HasForeignKey(ur => ur.UserId)
               .IsRequired();
 
-        entity.HasQueryFilter(u => !u.Borrado && (!_tenantId.HasValue || u.TenantId == _tenantId.Value));
+        entity.HasQueryFilter(u => !u.Borrado && (_tenantId == null || u.TenantId == _tenantId));
     });
     
     modelBuilder.Entity<Tenant>(entity => {
         entity.ToTable("Tenants");
         entity.HasKey(t => t.Id);
-        entity.HasQueryFilter(t => !t.Borrado && (!_tenantId.HasValue || t.Id == _tenantId.Value));
+        entity.HasQueryFilter(t => !t.Borrado && (_tenantId == null || t.Id == _tenantId));
     });
     
     modelBuilder.Entity<Rol>(entity => {
@@ -174,12 +174,12 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
               .HasForeignKey(r => r.TenantId)
               .OnDelete(DeleteBehavior.Restrict);
 
-        entity.HasQueryFilter(r => !r.Borrado && (!_tenantId.HasValue || r.TenantId == _tenantId.Value));
+        entity.HasQueryFilter(r => !r.Borrado && (_tenantId == null || r.TenantId == _tenantId));
     });
     modelBuilder.Entity<AuditLog>(entity => {
         entity.ToTable("AuditLogs");
         entity.HasKey(a => a.Id);
-        entity.HasQueryFilter(a => !_tenantId.HasValue || a.TenantId == _tenantId.Value);
+        entity.HasQueryFilter(a => _tenantId == null || a.TenantId == _tenantId);
     });
 
     modelBuilder.Entity<IdentityUserRole<int>>().ToTable("UsuariosRoles");

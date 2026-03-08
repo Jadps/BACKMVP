@@ -19,6 +19,7 @@ public class CurrentTenantService : ICurrentTenantService
     {
         get
         {
+            if (IsSuperAdmin) return null;
             if (_tenantId.HasValue) return _tenantId.Value;
 
             var tenantClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("TenantId")?.Value;

@@ -4,6 +4,7 @@ using MVP.Application.Interfaces;
 using MVP.WebAPI.Services;
 using Serilog;
 using Asp.Versioning;
+using MVP.Infrastructure.Persistence;
 using MVP.WebAPI.Middleware;
 using Microsoft.AspNetCore.Authorization;
 using Scalar.AspNetCore;
@@ -53,6 +54,7 @@ app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {
+    await app.Services.InitialiseDatabaseAsync();
     app.MapOpenApi().AllowAnonymous();
     app.MapScalarApiReference().AllowAnonymous();
 }

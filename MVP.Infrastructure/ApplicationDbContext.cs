@@ -158,7 +158,7 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
               .HasForeignKey(ur => ur.UserId)
               .IsRequired();
 
-        entity.HasQueryFilter(u => !u.Borrado && (_tenantId == null || u.TenantId == _tenantId));
+        entity.HasQueryFilter(u => !u.Borrado && (_tenantId == null || u.TenantId == _tenantId || u.TenantId == null));
     });
     
     modelBuilder.Entity<Tenant>(entity => {
@@ -174,7 +174,7 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
               .HasForeignKey(r => r.TenantId)
               .OnDelete(DeleteBehavior.Restrict);
 
-        entity.HasQueryFilter(r => !r.Borrado && (_tenantId == null || r.TenantId == _tenantId));
+        entity.HasQueryFilter(r => !r.Borrado && (_tenantId == null || r.TenantId == _tenantId || r.TenantId == null));
     });
     modelBuilder.Entity<AuditLog>(entity => {
         entity.ToTable("AuditLogs");

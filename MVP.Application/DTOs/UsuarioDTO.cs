@@ -27,7 +27,7 @@ namespace MVP.Application.DTOs
         [MaxLength(100)]
         public string? Password { get; set; } 
         
-        public int TenantId { get; set; }
+        public int? TenantId { get; set; }
         public List<RolDTO> Roles { get; set; } = new();
         public string? NombreCompleto { get; set; }
     }

@@ -12,7 +12,7 @@ public class Usuario : IdentityUser<int>, ISoftDelete
     public string? SegundoApellido { get; set; }
     public string FriendlyName { get; set; } = string.Empty;
 
-    public int TenantId { get; set; }
+    public int? TenantId { get; set; }
     public virtual Tenant? Tenant { get; set; }
 
     public int CatStatusAccountId { get; set; }

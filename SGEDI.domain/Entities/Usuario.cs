@@ -6,6 +6,7 @@ namespace SGEDI.Domain.Entities;
 
 public class Usuario : IdentityUser<int>, ISoftDelete
 {
+    public Guid Uid { get; set; } = Guid.NewGuid();
     public string Nombre { get; set; } = string.Empty;
     public string PrimerApellido { get; set; } = string.Empty;
     public string? SegundoApellido { get; set; }

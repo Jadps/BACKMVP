@@ -7,6 +7,7 @@ namespace SGEDI.Domain.Entities;
 public class Modulo
 {
     public int Id { get; set; }
+    public Guid Uid { get; set; } = Guid.NewGuid();
     public string Descripcion { get; set; } = string.Empty; 
     public string? Accion { get; set; } 
     public string? Icono { get; set; }

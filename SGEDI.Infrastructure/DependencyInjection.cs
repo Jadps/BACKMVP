@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using SGEDI.Infrastructure.Persistence;
 using SGEDI.Domain.Entities;
-using SGEDI.Domain.Cifrado;
 using Microsoft.AspNetCore.Identity;
 
 namespace SGEDI.Infrastructure;
@@ -23,10 +22,7 @@ public static class DependencyInjection
         .AddRoles<Rol>()
         .AddEntityFrameworkStores<ApplicationDbContext>();
 
-        var secretKey = configuration["Config:SecretKey"]
-            ?? throw new InvalidOperationException("Config:SecretKey no está configurada.");
-        services.AddSingleton(new CifradoOptions(secretKey));
-        services.AddSingleton<ICifradoService, CifradoService>();
+
 
         services.AddScoped(typeof(SGEDI.Domain.Interfaces.IRepository<>), typeof(SGEDI.Infrastructure.Repositories.Repository<>));
 

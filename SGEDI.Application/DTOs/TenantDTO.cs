@@ -4,7 +4,7 @@ namespace SGEDI.Application.DTOs;
 
 public class TenantDTO
 {
-    public string? Id { get; set; }
+    public Guid? Id { get; set; }
     public string Nombre { get; set; } = string.Empty;
     public string? Dominio { get; set; }
     public bool Borrado { get; set; }

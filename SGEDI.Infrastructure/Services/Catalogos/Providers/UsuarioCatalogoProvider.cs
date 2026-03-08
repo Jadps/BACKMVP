@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using SGEDI.Application.DTOs;
-using SGEDI.Domain.Cifrado;
 using SGEDI.Infrastructure.Persistence;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +9,7 @@ namespace SGEDI.Infrastructure.Services.Catalogos.Providers
 {
     public class UsuarioCatalogoProvider : BaseCatalogoProvider
     {
-        public UsuarioCatalogoProvider(ApplicationDbContext db, ICifradoService cifrado) : base(db, cifrado) { }
+        public UsuarioCatalogoProvider(ApplicationDbContext db) : base(db) { }
 
         public override string Nombre => "usuarios";
 
@@ -18,7 +17,7 @@ namespace SGEDI.Infrastructure.Services.Catalogos.Providers
         {
             return await ProyectarCatalogo(
                 _db.Users.Where(u => !u.Borrado),
-                u => u.Id,
+                u => u.Uid,
                 u => (u.Nombre + " " + u.PrimerApellido + " " + u.SegundoApellido).Trim()
             );
         }

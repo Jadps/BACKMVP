@@ -31,11 +31,11 @@ public class IdentityService : IIdentityService
             .ToListAsync();
     }
 
-    public async Task<Usuario?> GetUsuarioActivoByIdAsync(int id)
+    public async Task<Usuario?> GetUsuarioActivoByUidAsync(Guid uid)
     {
         return await _userManager.Users
             .Include(u => u.UserRoles)
-            .FirstOrDefaultAsync(u => u.Id == id && !u.Borrado);
+            .FirstOrDefaultAsync(u => u.Uid == uid && !u.Borrado);
     }
 
     public async Task<ApplicationResult> CrearUsuarioAsync(Usuario usuario, string password, List<string> rolesNombres)
@@ -105,9 +105,9 @@ public class IdentityService : IIdentityService
         }
     }
 
-    public async Task<bool> BorrarUsuarioAsync(int userId)
+    public async Task<bool> BorrarUsuarioAsync(Guid uid)
     {
-        var user = await _userManager.FindByIdAsync(userId.ToString());
+        var user = await GetUsuarioActivoByUidAsync(uid);
         if (user == null) return false;
 
         user.Borrado = true;
@@ -119,6 +119,13 @@ public class IdentityService : IIdentityService
     {
         return await _roleManager.Roles
             .Where(r => roleIds.Contains(r.Id))
+            .ToListAsync();
+    }
+
+    public async Task<List<Rol>> GetRolesByUidsAsync(IEnumerable<Guid> roleUids)
+    {
+        return await _roleManager.Roles
+            .Where(r => roleUids.Contains(r.Uid))
             .ToListAsync();
     }
 }

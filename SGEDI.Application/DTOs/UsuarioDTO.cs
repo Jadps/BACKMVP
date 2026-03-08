@@ -6,7 +6,7 @@ namespace SGEDI.Application.DTOs
 {
     public class UsuarioDTO
     {
-        public string? Id { get; set; } 
+        public Guid? Id { get; set; } 
         public string Email { get; set; } = string.Empty;
         public string Nombre { get; set; } = string.Empty;
         public string PrimerApellido { get; set; } = string.Empty;

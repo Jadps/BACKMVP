@@ -21,7 +21,7 @@ public class TenantsController : ControllerBase
     public async Task<ActionResult<List<TenantDTO>>> Get() => Ok(await _service.GetTodosAsync());
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<TenantDTO>> GetById(string id)
+    public async Task<ActionResult<TenantDTO>> GetById(Guid id)
     {
         var tenant = await _service.GetByIdAsync(id);
         return tenant != null ? Ok(tenant) : NotFound();

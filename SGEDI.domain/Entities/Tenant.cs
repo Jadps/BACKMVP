@@ -8,6 +8,7 @@ namespace SGEDI.Domain.Entities;
 public class Tenant : ISoftDelete
 {
     public int Id { get; set; }
+    public Guid Uid { get; set; } = Guid.NewGuid();
     public string Nombre { get; set; } = string.Empty;
     public string? Dominio { get; set; }
     public bool Borrado { get; set; } = false;

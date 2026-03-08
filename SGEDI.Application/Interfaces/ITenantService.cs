@@ -7,7 +7,7 @@ namespace SGEDI.Application.Interfaces;
 public interface ITenantService
 {
     Task<List<TenantDTO>> GetTodosAsync();
-    Task<TenantDTO?> GetByIdAsync(string id);
-    Task<int> CrearAsync(TenantDTO dto);
+    Task<TenantDTO?> GetByIdAsync(Guid id);
+    Task<Guid> CrearAsync(TenantDTO dto);
     Task ActualizarAsync(TenantDTO dto);
 }

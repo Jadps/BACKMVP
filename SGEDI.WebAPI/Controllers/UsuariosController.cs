@@ -17,7 +17,7 @@ namespace SGEDI.WebAPI.Controllers
         public async Task<IActionResult> Get() => Ok(await _service.GetTodosAsync());
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(string id)
+        public async Task<IActionResult> GetById(Guid id)
         {
             var user = await _service.GetByIdAsync(id);
             return user != null ? Ok(user) : NotFound();
@@ -38,7 +38,7 @@ namespace SGEDI.WebAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var borrado = await _service.BorrarAsync(id);
             return borrado ? Ok() : NotFound();

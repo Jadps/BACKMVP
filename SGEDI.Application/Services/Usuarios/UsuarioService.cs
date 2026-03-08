@@ -3,7 +3,6 @@ using SGEDI.Application.DTOs;
 using SGEDI.Application.Exceptions;
 using SGEDI.Application.Interfaces;
 using SGEDI.Application.Interfaces.Usuarios;
-using SGEDI.Domain.Cifrado;
 using SGEDI.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -16,16 +15,13 @@ namespace SGEDI.Application.Services.Usuarios
     {
         private readonly IIdentityService _identityService;
         private readonly IMapper _mapper;
-        private readonly ICifradoService _cifrado;
 
         public UsuarioService(
             IIdentityService identityService,
-            IMapper mapper, 
-            ICifradoService cifrado)
+            IMapper mapper)
         {
             _identityService = identityService;
             _mapper = mapper;
-            _cifrado = cifrado;
         }
 
         public async Task<List<UsuarioDTO>> GetTodosAsync()
@@ -53,17 +49,11 @@ namespace SGEDI.Application.Services.Usuarios
             }).ToList();
         }
 
-        public async Task<UsuarioDTO?> GetByIdAsync(string idCifrado)
+        public async Task<UsuarioDTO?> GetByIdAsync(Guid id)
         {
-            if (string.IsNullOrEmpty(idCifrado)) return null;
+            if (id == Guid.Empty) return null;
 
-            string decrypted = _cifrado.Desencriptar(idCifrado);
-            if (!int.TryParse(decrypted, out int realId))
-            {
-                throw new ValidationException("El identificador del usuario proporcionado tiene un formato incorrecto.");
-            }
-
-            var user = await _identityService.GetUsuarioActivoByIdAsync(realId);
+            var user = await _identityService.GetUsuarioActivoByUidAsync(id);
             
             if (user == null) 
             {
@@ -91,8 +81,10 @@ namespace SGEDI.Application.Services.Usuarios
 
         public async Task<ApplicationResult> ActualizarAsync(UsuarioDTO dto)
         {
-            int realId = int.Parse(_cifrado.Desencriptar(dto.Id!));
-            var user = await _identityService.GetUsuarioActivoByIdAsync(realId);
+            if (dto.Id == null)
+                throw new ValidationException("El identificador del usuario proporcionado es nulo.");
+
+            var user = await _identityService.GetUsuarioActivoByUidAsync(dto.Id.Value);
 
             if (user == null)
             {
@@ -106,10 +98,9 @@ namespace SGEDI.Application.Services.Usuarios
             return await _identityService.ActualizarUsuarioAsync(user, nombresRolesNuevos);
         }
 
-        public async Task<bool> BorrarAsync(string idCifrado)
+        public async Task<bool> BorrarAsync(Guid id)
         {
-            int realId = int.Parse(_cifrado.Desencriptar(idCifrado));
-            var success = await _identityService.BorrarUsuarioAsync(realId);
+            var success = await _identityService.BorrarUsuarioAsync(id);
             
             if (!success)
             {
@@ -121,18 +112,18 @@ namespace SGEDI.Application.Services.Usuarios
 
         private async Task<List<string>> ObtenerNombresRolesAsync(List<RolDTO> rolesDto)
         {
-            var roleIdsToFind = new List<int>();
+            var roleUidsToFind = new List<Guid>();
             foreach (var roleDto in rolesDto)
             {
-                if (roleDto.Id != null && int.TryParse(_cifrado.Desencriptar(roleDto.Id), out int roleId))
+                if (roleDto.Id.HasValue)
                 {
-                    roleIdsToFind.Add(roleId);
+                    roleUidsToFind.Add(roleDto.Id.Value);
                 }
             }
 
-            if (!roleIdsToFind.Any()) return new List<string>();
+            if (!roleUidsToFind.Any()) return new List<string>();
 
-            var rolesDb = await _identityService.GetRolesByIdsAsync(roleIdsToFind);
+            var rolesDb = await _identityService.GetRolesByUidsAsync(roleUidsToFind);
             return rolesDb.Select(r => r.Name!).Where(n => !string.IsNullOrEmpty(n)).ToList();
         }
     }

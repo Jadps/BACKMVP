@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using SGEDI.Application.DTOs;
-using SGEDI.Domain.Cifrado;
 using SGEDI.Infrastructure.Persistence;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +9,7 @@ namespace SGEDI.Infrastructure.Services.Catalogos.Providers
 {
     public class RoleCatalogoProvider : BaseCatalogoProvider
     {
-        public RoleCatalogoProvider(ApplicationDbContext db, ICifradoService cifrado) : base(db, cifrado) { }
+        public RoleCatalogoProvider(ApplicationDbContext db) : base(db) { }
 
         public override string Nombre => "roles";
 
@@ -18,7 +17,7 @@ namespace SGEDI.Infrastructure.Services.Catalogos.Providers
         {
             return await ProyectarCatalogo(
                 _db.Roles.Where(r => !r.Borrado),
-                r => r.Id,
+                r => r.Uid,
                 r => r.Name ?? r.Descripcion ?? string.Empty
             );
         }

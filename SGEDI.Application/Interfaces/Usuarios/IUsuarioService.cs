@@ -8,9 +8,9 @@ namespace SGEDI.Application.Interfaces.Usuarios
     public interface IUsuarioService
     {
         Task<List<UsuarioDTO>> GetTodosAsync();
-        Task<UsuarioDTO?> GetByIdAsync(string idCifrado);
+        Task<UsuarioDTO?> GetByIdAsync(Guid id);
         Task<ApplicationResult> CrearAsync(UsuarioDTO dto);
         Task<ApplicationResult> ActualizarAsync(UsuarioDTO dto);
-        Task<bool> BorrarAsync(string idCifrado);
+        Task<bool> BorrarAsync(Guid id);
     }
 }

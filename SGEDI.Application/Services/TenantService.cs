@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using AutoMapper;
 using SGEDI.Application.DTOs;
 using SGEDI.Application.Interfaces;
-using SGEDI.Domain.Cifrado;
 using SGEDI.Domain.Entities;
 using SGEDI.Domain.Interfaces;
 
@@ -14,13 +13,11 @@ public class TenantService : ITenantService
 {
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
-    private readonly ICifradoService _cifrado;
 
-    public TenantService(IUnitOfWork uow, IMapper mapper, ICifradoService cifrado)
+    public TenantService(IUnitOfWork uow, IMapper mapper)
     {
         _uow = uow;
         _mapper = mapper;
-        _cifrado = cifrado;
     }
 
     public async Task<List<TenantDTO>> GetTodosAsync()
@@ -29,14 +26,13 @@ public class TenantService : ITenantService
         return _mapper.Map<List<TenantDTO>>(tenants);
     }
 
-    public async Task<TenantDTO?> GetByIdAsync(string id)
+    public async Task<TenantDTO?> GetByIdAsync(Guid id)
     {
-        int decodedId = int.Parse(_cifrado.Desencriptar(id));
-        var tenant = await _uow.Repository<Tenant>().GetFirstOrDefaultAsync(t => t.Id == decodedId);
+        var tenant = await _uow.Repository<Tenant>().GetFirstOrDefaultAsync(t => t.Uid == id);
         return tenant == null ? null : _mapper.Map<TenantDTO>(tenant);
     }
 
-    public async Task<int> CrearAsync(TenantDTO dto)
+    public async Task<Guid> CrearAsync(TenantDTO dto)
     {
         var tenant = _mapper.Map<Tenant>(dto);
         tenant.FechaCreacion = DateTime.UtcNow;
@@ -44,13 +40,13 @@ public class TenantService : ITenantService
         await _uow.Repository<Tenant>().AddAsync(tenant);
         await _uow.CommitAsync();
         
-        return tenant.Id;
+        return tenant.Uid;
     }
 
     public async Task ActualizarAsync(TenantDTO dto)
     {
-        int decodedId = int.Parse(_cifrado.Desencriptar(dto.Id!));
-        var tenant = await _uow.Repository<Tenant>().GetFirstOrDefaultAsync(t => t.Id == decodedId);
+        if (dto.Id == null) throw new ArgumentException("El Id no puede ser nulo");
+        var tenant = await _uow.Repository<Tenant>().GetFirstOrDefaultAsync(t => t.Uid == dto.Id.Value);
         
         if (tenant != null)
         {

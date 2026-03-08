@@ -2,7 +2,6 @@ using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using SGEDI.Application.DTOs;
 using SGEDI.Application.Interfaces.Catalogos;
-using SGEDI.Domain.Cifrado;
 using SGEDI.Domain.Entities;
 using SGEDI.Domain.Interfaces;
 using System;
@@ -17,18 +16,15 @@ namespace SGEDI.Application.Services.Catalogos
     {
         private readonly RoleManager<Rol> _roleManager;
         private readonly IMapper _mapper;
-        private readonly ICifradoService _cifrado;
         private readonly IRepository<Modulo> _moduloRepository;
 
         public CatalogoService(
             RoleManager<Rol> roleManager, 
             IMapper mapper, 
-            ICifradoService cifrado,
             IRepository<Modulo> moduloRepository)
         {
             _roleManager = roleManager;
             _mapper = mapper;
-            _cifrado = cifrado;
             _moduloRepository = moduloRepository;
         }
 

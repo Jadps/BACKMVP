@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 using SGEDI.Application.DTOs;
 using SGEDI.Application.Interfaces.Catalogos;
 
 namespace SGEDI.WebAPI.Controllers
 {
+    [ApiVersion("1.0")]
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     public class CatalogosController : ControllerBase
     {
         private readonly ICatalogoService _service;

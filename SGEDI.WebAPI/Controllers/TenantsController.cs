@@ -1,12 +1,15 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Asp.Versioning;
 using SGEDI.Application.DTOs;
 using SGEDI.Application.Interfaces;
 
 namespace SGEDI.WebAPI.Controllers;
 
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [ApiController]
 public class TenantsController : ControllerBase
 {
@@ -28,6 +31,7 @@ public class TenantsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> Post(TenantDTO dto)
     {
         var id = await _service.CrearAsync(dto);
@@ -35,6 +39,7 @@ public class TenantsController : ControllerBase
     }
 
     [HttpPut]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> Put(TenantDTO dto)
     {
         await _service.ActualizarAsync(dto);

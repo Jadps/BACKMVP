@@ -15,6 +15,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
     {
         public int? TenantId => null;
         public string? UserId => null;
+        public bool IsSuperAdmin => false;
         public void SetTenantId(int tenantId) { }
     }
 

@@ -31,6 +31,8 @@ public class CurrentTenantService : ICurrentTenantService
 
     public string? UserId => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
+    public bool IsSuperAdmin => _httpContextAccessor.HttpContext?.User?.IsInRole("SuperAdmin") ?? false;
+
     public void SetTenantId(int tenantId)
     {
         _tenantId = tenantId;

@@ -14,13 +14,16 @@ namespace SGEDI.Application.Services.Usuarios
     public class UsuarioService : IUsuarioService
     {
         private readonly IIdentityService _identityService;
+        private readonly ICurrentTenantService _currentTenantService;
         private readonly IMapper _mapper;
 
         public UsuarioService(
             IIdentityService identityService,
+            ICurrentTenantService currentTenantService,
             IMapper mapper)
         {
             _identityService = identityService;
+            _currentTenantService = currentTenantService;
             _mapper = mapper;
         }
 
@@ -73,6 +76,15 @@ namespace SGEDI.Application.Services.Usuarios
         {
             var usuario = _mapper.Map<Usuario>(dto);
             usuario.UserName = dto.Email;
+            
+            if (!_currentTenantService.IsSuperAdmin)
+            {
+                var currentTenantId = _currentTenantService.TenantId;
+                if (currentTenantId.HasValue)
+                {
+                    usuario.TenantId = currentTenantId.Value;
+                }
+            }
             
             var nombresRolesNuevos = await ObtenerNombresRolesAsync(dto.Roles);
             

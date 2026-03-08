@@ -16,6 +16,8 @@ public static class DependencyInjection
         
         services.AddScoped<Interfaces.ITenantService, Services.TenantService>();
 
+        services.AddScoped<Interfaces.IOnboardingService, Services.OnboardingService>();
+
         return services;
     }
 }

@@ -25,6 +25,8 @@ public class ApplicationDbContext : IdentityDbContext<Usuario, Rol, int>
     public DbSet<Modulo> Modulos => Set<Modulo>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<Archivo> Archivos => Set<Archivo>();
+    public DbSet<Documento> Documentos => Set<Documento>();
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -180,6 +182,34 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
         entity.ToTable("AuditLogs");
         entity.HasKey(a => a.Id);
         entity.HasQueryFilter(a => _tenantId == null || a.TenantId == _tenantId);
+    });
+
+    modelBuilder.Entity<Archivo>(entity => {
+        entity.ToTable("Archivos");
+        entity.HasKey(a => a.Id);
+        entity.HasOne(a => a.Tenant)
+              .WithMany()
+              .HasForeignKey(a => a.TenantId)
+              .OnDelete(DeleteBehavior.Restrict);
+
+        entity.HasQueryFilter(a => !a.Borrado && (_tenantId == null || a.TenantId == _tenantId || a.TenantId == null));
+    });
+
+    modelBuilder.Entity<Documento>(entity => {
+        entity.ToTable("Documentos");
+        entity.HasKey(d => d.Id);
+        
+        entity.HasOne(d => d.Archivo)
+              .WithMany(a => a.Documentos)
+              .HasForeignKey(d => d.ArchivoId)
+              .OnDelete(DeleteBehavior.SetNull);
+
+        entity.HasOne(d => d.Tenant)
+              .WithMany()
+              .HasForeignKey(d => d.TenantId)
+              .OnDelete(DeleteBehavior.Restrict);
+
+        entity.HasQueryFilter(d => !d.Borrado && (_tenantId == null || d.TenantId == _tenantId || d.TenantId == null));
     });
 
     modelBuilder.Entity<IdentityUserRole<int>>().ToTable("UsuariosRoles");

@@ -10,6 +10,7 @@ namespace MVP.Application.Interfaces.Usuarios
         Task<List<UsuarioDTO>> GetTodosAsync();
         Task<PagedResult<UsuarioDTO>> GetPagedAsync(int pageNumber, int pageSize);
         Task<UsuarioDTO?> GetByIdAsync(Guid id);
+        Task<UsuarioDTO?> GetPerfilActualAsync();
         Task<ApplicationResult> CrearAsync(UsuarioDTO dto);
         Task<ApplicationResult> ActualizarAsync(UsuarioDTO dto);
         Task<bool> BorrarAsync(Guid id);

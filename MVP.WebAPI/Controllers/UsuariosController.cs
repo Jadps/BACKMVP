@@ -18,12 +18,20 @@ namespace MVP.WebAPI.Controllers
         public UsuariosController(IUsuarioService service) => _service = service;
 
         [HttpGet]
-        public async Task<IActionResult> Get() => Ok(await _service.GetTodosAsync());
+        public async Task<IActionResult> Get([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10) 
+            => Ok(await _service.GetPagedAsync(pageNumber, pageSize));
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
             var user = await _service.GetByIdAsync(id);
+            return user != null ? Ok(user) : NotFound();
+        }
+
+        [HttpGet("me")]
+        public async Task<IActionResult> GetMe()
+        {
+            var user = await _service.GetPerfilActualAsync();
             return user != null ? Ok(user) : NotFound();
         }
 

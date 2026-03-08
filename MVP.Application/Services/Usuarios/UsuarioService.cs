@@ -105,6 +105,15 @@ namespace MVP.Application.Services.Usuarios
             return dto;
         }
 
+        public async Task<UsuarioDTO?> GetPerfilActualAsync()
+        {
+            var userIdStr = _currentTenantService.UserId;
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+                return null;
+
+            return await GetByIdAsync(userId);
+        }
+
         public async Task<ApplicationResult> CrearAsync(UsuarioDTO dto)
         {
             var usuario = _mapper.Map<Usuario>(dto);

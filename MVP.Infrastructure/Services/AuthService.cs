@@ -4,6 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using Hangfire;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -88,12 +89,7 @@ public class AuthService : IAuthService
             <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
         ";
 
-        var emailResult = await _emailService.SendEmailAsync(user.Email!, subject, body);
-
-        if (!emailResult.Succeeded)
-        {
-            return ApplicationResult.Failure(emailResult.Errors, ErrorType.Unexpected);
-        }
+        BackgroundJob.Enqueue<IEmailService>(emailService => emailService.SendEmailAsync(user.Email!, subject, body, true));
 
         return ApplicationResult.Success();
     }

@@ -12,6 +12,8 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
+using Hangfire;
+using Hangfire.PostgreSql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,6 +76,16 @@ builder.Services.AddInfrastructureSecurity(builder.Configuration);
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
+builder.Services.AddHangfire(configuration => configuration
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(
+        options => options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))
+    ));
+
+builder.Services.AddHangfireServer();
+
 var app = builder.Build();
 
 app.UseExceptionHandler();
@@ -91,6 +103,12 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
+
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new MVP.WebAPI.Middleware.HangfireAuthorizationFilter() }
+});
+
 app.MapControllers();
 
 app.MapHealthChecks("/api/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions

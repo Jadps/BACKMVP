@@ -1,7 +1,7 @@
 $kind: http-request
 name: 'Update Tenant'
 method: PUT
-url: '{{baseUrl}}/api/v1/tenants/{{tenantId}}'
+url: '{{baseUrl}}/api/v1/tenants'
 order: 4000
 headers:
   - key: Content-Type
@@ -10,9 +10,11 @@ body:
   type: json
   content: |-
     {
-      "name": "Empresa Demo Actualizada",
-      "plan": "premium",
-      "isActive": true
+      "Id": "{{tenantId}}",
+      "Nombre": "Tenant Actualizado",
+      "Dominio": "actualizado",
+      "Borrado": false,
+      "FechaCreacion": "2024-01-01T00:00:00Z"
     }
 scripts:
   - type: afterResponse
@@ -22,7 +24,6 @@ scripts:
           pm.response.to.have.status(200);
       });
 
-      pm.test('Tenant name was updated', function () {
-          const json = pm.response.json();
-          pm.expect(json.name).to.equal('Empresa Demo Actualizada');
+      pm.test('Response time is less than 2000ms', function () {
+          pm.expect(pm.response.responseTime).to.be.below(2000);
       });

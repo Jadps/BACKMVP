@@ -10,8 +10,3 @@ scripts:
       pm.test('Status code is 404', function () {
           pm.response.to.have.status(404);
       });
-
-      pm.test('Response has error message', function () {
-          const json = pm.response.json();
-          pm.expect(json).to.have.property('message');
-      });

@@ -1,7 +1,7 @@
 $kind: http-request
-name: 'Get All Users'
+name: 'Get Roles'
 method: GET
-url: '{{baseUrl}}/api/v1/usuarios'
+url: '{{baseUrl}}/api/v1/catalogos/roles'
 order: 1000
 scripts:
   - type: afterResponse
@@ -16,17 +16,13 @@ scripts:
           pm.expect(json).to.be.an('array');
       });
 
-      pm.test('Each user has required fields', function () {
+      pm.test('Each role has required fields', function () {
           const json = pm.response.json();
           if (json.length > 0) {
-              json.forEach(function (user) {
-                  pm.expect(user).to.have.property('id');
-                  pm.expect(user).to.have.property('email');
-                  pm.expect(user).to.have.property('nombre');
-                  pm.expect(user).to.have.property('primerApellido');
+              json.forEach(function (rol) {
+                  pm.expect(rol).to.have.property('id');
+                  pm.expect(rol).to.have.property('nombre');
               });
-              // Save first user ID for subsequent requests
-              pm.collectionVariables.set('userId', json[0].id);
           }
       });
 

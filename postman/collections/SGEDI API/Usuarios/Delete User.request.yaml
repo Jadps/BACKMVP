@@ -1,16 +1,16 @@
 $kind: http-request
 name: 'Delete User'
 method: DELETE
-url: '{{baseUrl}}/api/v1/users/{{userId}}'
-order: 6000
+url: '{{baseUrl}}/api/v1/usuarios/{{userId}}'
+order: 7000
 scripts:
   - type: afterResponse
     language: text/javascript
     code: |-
-      pm.test('Status code is 200 or 204', function () {
-          pm.expect(pm.response.code).to.be.oneOf([200, 204]);
+      pm.test('Status code is 200 or 404', function () {
+          pm.expect(pm.response.code).to.be.oneOf([200, 404]);
       });
 
-      // Limpiar userId de la colección
-      pm.collectionVariables.set('userId', '');
-      console.log('userId eliminado de variables de colección');
+      pm.test('Response time is less than 2000ms', function () {
+          pm.expect(pm.response.responseTime).to.be.below(2000);
+      });

@@ -1,7 +1,7 @@
 $kind: http-request
 name: 'Get User By ID'
 method: GET
-url: '{{baseUrl}}/api/v1/users/{{userId}}'
+url: '{{baseUrl}}/api/v1/usuarios/{{userId}}'
 order: 2000
 scripts:
   - type: afterResponse
@@ -11,18 +11,16 @@ scripts:
           pm.response.to.have.status(200);
       });
 
-      pm.test('Response has userId', function () {
+      pm.test('Response has user fields', function () {
           const json = pm.response.json();
-          pm.expect(json).to.have.property('userId');
-      });
-
-      pm.test('Response has email', function () {
-          const json = pm.response.json();
+          pm.expect(json).to.have.property('id');
           pm.expect(json).to.have.property('email');
+          pm.expect(json).to.have.property('nombre');
+          pm.expect(json).to.have.property('primerApellido');
+          pm.expect(json).to.have.property('tenantId');
+          pm.expect(json).to.have.property('roles');
       });
 
-      pm.test('Response has name fields', function () {
-          const json = pm.response.json();
-          pm.expect(json).to.have.property('firstName');
-          pm.expect(json).to.have.property('lastName');
+      pm.test('Response time is less than 2000ms', function () {
+          pm.expect(pm.response.responseTime).to.be.below(2000);
       });

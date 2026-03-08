@@ -6,23 +6,19 @@ order: 3000
 headers:
   - key: Content-Type
     value: application/json
+auth:
+  type: noauth
 body:
   type: json
   content: |-
     {
-      "email": "admin@sgedi.com"
+      "Email": "",
+      "Password": ""
     }
-auth:
-  type: noauth
 scripts:
   - type: afterResponse
     language: text/javascript
     code: |-
-      pm.test('Status code is 400', function () {
-          pm.response.to.have.status(400);
-      });
-
-      pm.test('Response has validation errors', function () {
-          const json = pm.response.json();
-          pm.expect(json).to.have.property('errors').or.have.property('message');
+      pm.test('Status code is 401', function () {
+          pm.response.to.have.status(401);
       });

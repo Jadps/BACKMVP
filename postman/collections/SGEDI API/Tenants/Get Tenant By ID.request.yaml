@@ -11,12 +11,15 @@ scripts:
           pm.response.to.have.status(200);
       });
 
-      pm.test('Response has tenantId', function () {
+      pm.test('Response has tenant fields', function () {
           const json = pm.response.json();
-          pm.expect(json).to.have.property('tenantId');
+          pm.expect(json).to.have.property('id');
+          pm.expect(json).to.have.property('nombre');
+          pm.expect(json).to.have.property('dominio');
+          pm.expect(json).to.have.property('borrado');
+          pm.expect(json).to.have.property('fechaCreacion');
       });
 
-      pm.test('Response has name', function () {
-          const json = pm.response.json();
-          pm.expect(json).to.have.property('name');
+      pm.test('Response time is less than 2000ms', function () {
+          pm.expect(pm.response.responseTime).to.be.below(2000);
       });

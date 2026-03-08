@@ -1,7 +1,7 @@
 $kind: http-request
 name: 'Register New Tenant'
 method: POST
-url: '{{baseUrl}}/api/v1/onboarding/register'
+url: '{{baseUrl}}/api/v1/onboarding'
 order: 1000
 headers:
   - key: Content-Type
@@ -12,38 +12,28 @@ body:
   type: json
   content: |-
     {
-      "companyName": "Empresa Demo S.A.",
-      "adminEmail": "admin@empresademo.com",
-      "adminPassword": "Admin1234!",
-      "adminFirstName": "Juan",
-      "adminLastName": "Pérez",
-      "plan": "basic"
+      "EmpresaNombre": "Empresa Demo S.A.",
+      "Dominio": "demo",
+      "AdminEmail": "admin@demo.com",
+      "AdminPassword": "Admin1234!",
+      "AdminNombre": "Juan",
+      "AdminPrimerApellido": "García",
+      "AdminSegundoApellido": "López"
     }
 scripts:
   - type: afterResponse
     language: text/javascript
     code: |-
-      pm.test('Status code is 201', function () {
-          pm.response.to.have.status(201);
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
       });
 
-      pm.test('Response has tenantId', function () {
+      pm.test('Response has success message', function () {
           const json = pm.response.json();
-          pm.expect(json).to.have.property('tenantId');
-      });
-
-      pm.test('Response has admin user info', function () {
-          const json = pm.response.json();
-          pm.expect(json).to.have.property('adminUser');
+          pm.expect(json).to.have.property('message');
+          pm.expect(json.message).to.be.a('string').and.not.empty;
       });
 
       pm.test('Response time is less than 3000ms', function () {
           pm.expect(pm.response.responseTime).to.be.below(3000);
       });
-
-      // Guardar tenantId automáticamente
-      const json = pm.response.json();
-      if (json.tenantId) {
-          pm.collectionVariables.set('tenantId', json.tenantId);
-          console.log('tenantId guardado:', json.tenantId);
-      }

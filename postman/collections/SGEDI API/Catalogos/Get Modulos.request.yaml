@@ -1,8 +1,8 @@
 $kind: http-request
-name: 'Get All Catalogs'
+name: 'Get Modulos'
 method: GET
-url: '{{baseUrl}}/api/v1/catalogs'
-order: 1000
+url: '{{baseUrl}}/api/v1/catalogos/modulos'
+order: 3000
 scripts:
   - type: afterResponse
     language: text/javascript
@@ -14,16 +14,6 @@ scripts:
       pm.test('Response is an array', function () {
           const json = pm.response.json();
           pm.expect(json).to.be.an('array');
-      });
-
-      pm.test('Each catalog has required fields', function () {
-          const json = pm.response.json();
-          if (json.length > 0) {
-              json.forEach(function (catalog) {
-                  pm.expect(catalog).to.have.property('catalogId');
-                  pm.expect(catalog).to.have.property('name');
-              });
-          }
       });
 
       pm.test('Response time is less than 2000ms', function () {

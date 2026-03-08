@@ -16,16 +16,19 @@ scripts:
           pm.expect(json).to.be.an('array');
       });
 
-      pm.test('Response time is less than 2000ms', function () {
-          pm.expect(pm.response.responseTime).to.be.below(2000);
-      });
-
       pm.test('Each tenant has required fields', function () {
           const json = pm.response.json();
           if (json.length > 0) {
               json.forEach(function (tenant) {
-                  pm.expect(tenant).to.have.property('tenantId');
-                  pm.expect(tenant).to.have.property('name');
+                  pm.expect(tenant).to.have.property('id');
+                  pm.expect(tenant).to.have.property('nombre');
+                  pm.expect(tenant).to.have.property('dominio');
               });
+              // Save first tenant ID for subsequent requests
+              pm.collectionVariables.set('tenantId', json[0].id);
           }
+      });
+
+      pm.test('Response time is less than 2000ms', function () {
+          pm.expect(pm.response.responseTime).to.be.below(2000);
       });

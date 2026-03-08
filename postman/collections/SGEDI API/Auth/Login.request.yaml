@@ -6,15 +6,15 @@ order: 1000
 headers:
   - key: Content-Type
     value: application/json
+auth:
+  type: noauth
 body:
   type: json
   content: |-
     {
-      "email": "admin@sgedi.com",
-      "password": "Admin1234!"
+      "Email": "admin@sgedi.com",
+      "Password": "Admin1234!"
     }
-auth:
-  type: noauth
 scripts:
   - type: afterResponse
     language: text/javascript
@@ -29,22 +29,18 @@ scripts:
           pm.expect(json.token).to.be.a('string').and.not.empty;
       });
 
-      pm.test('Response has user info', function () {
+      pm.test('Response has expiration', function () {
           const json = pm.response.json();
-          pm.expect(json).to.have.property('user');
+          pm.expect(json).to.have.property('expiration');
       });
 
       pm.test('Response time is less than 2000ms', function () {
           pm.expect(pm.response.responseTime).to.be.below(2000);
       });
 
-      // Guardar token y userId automáticamente
+      // Save token automatically
       const json = pm.response.json();
       if (json.token) {
           pm.collectionVariables.set('token', json.token);
-          console.log('Token guardado en variables de colección');
-      }
-      if (json.user && json.user.userId) {
-          pm.collectionVariables.set('userId', json.user.userId);
-          console.log('userId guardado:', json.user.userId);
+          console.log('Token saved to collection variables');
       }

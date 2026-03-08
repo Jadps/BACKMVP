@@ -1,8 +1,8 @@
 $kind: http-request
-name: 'Get All Users'
+name: 'Get Generic Catalog'
 method: GET
-url: '{{baseUrl}}/api/v1/usuarios'
-order: 1000
+url: '{{baseUrl}}/api/v1/catalogos/cEstados'
+order: 5000
 scripts:
   - type: afterResponse
     language: text/javascript
@@ -16,17 +16,13 @@ scripts:
           pm.expect(json).to.be.an('array');
       });
 
-      pm.test('Each user has required fields', function () {
+      pm.test('Each item has required fields', function () {
           const json = pm.response.json();
           if (json.length > 0) {
-              json.forEach(function (user) {
-                  pm.expect(user).to.have.property('id');
-                  pm.expect(user).to.have.property('email');
-                  pm.expect(user).to.have.property('nombre');
-                  pm.expect(user).to.have.property('primerApellido');
+              json.forEach(function (item) {
+                  pm.expect(item).to.have.property('id');
+                  pm.expect(item).to.have.property('descripcion');
               });
-              // Save first user ID for subsequent requests
-              pm.collectionVariables.set('userId', json[0].id);
           }
       });
 

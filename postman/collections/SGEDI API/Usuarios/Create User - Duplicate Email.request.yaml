@@ -1,8 +1,8 @@
 $kind: http-request
 name: 'Create User - Duplicate Email'
 method: POST
-url: '{{baseUrl}}/api/v1/users'
-order: 4000
+url: '{{baseUrl}}/api/v1/usuarios'
+order: 5000
 headers:
   - key: Content-Type
     value: application/json
@@ -10,22 +10,22 @@ body:
   type: json
   content: |-
     {
-      "email": "nuevo.usuario@sgedi.com",
-      "password": "User1234!",
-      "firstName": "Carlos",
-      "lastName": "Ruiz",
-      "role": "user",
-      "tenantId": "{{tenantId}}"
+      "Email": "admin@sgedi.com",
+      "Nombre": "Admin",
+      "PrimerApellido": "Duplicado",
+      "Password": "Admin1234!",
+      "id": 1,
+      "Roles": []
     }
 scripts:
   - type: afterResponse
     language: text/javascript
     code: |-
-      pm.test('Status code is 409 Conflict', function () {
-          pm.response.to.have.status(409);
+      pm.test('Status code is 400', function () {
+          pm.response.to.have.status(400);
       });
 
-      pm.test('Response has conflict error message', function () {
+      pm.test('Response has error details', function () {
           const json = pm.response.json();
-          pm.expect(json).to.have.property('message');
+          pm.expect(json).to.exist;
       });

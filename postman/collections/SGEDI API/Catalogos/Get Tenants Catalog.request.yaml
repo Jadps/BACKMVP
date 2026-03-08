@@ -1,8 +1,8 @@
 $kind: http-request
-name: 'Get Catalog Items'
+name: 'Get Tenants Catalog'
 method: GET
-url: '{{baseUrl}}/api/v1/catalogs/{{catalogId}}/items'
-order: 7000
+url: '{{baseUrl}}/api/v1/catalogos/tenants'
+order: 4000
 scripts:
   - type: afterResponse
     language: text/javascript
@@ -20,8 +20,8 @@ scripts:
           const json = pm.response.json();
           if (json.length > 0) {
               json.forEach(function (item) {
-                  pm.expect(item).to.have.property('itemId');
-                  pm.expect(item).to.have.property('name');
+                  pm.expect(item).to.have.property('id');
+                  pm.expect(item).to.have.property('descripcion');
               });
           }
       });

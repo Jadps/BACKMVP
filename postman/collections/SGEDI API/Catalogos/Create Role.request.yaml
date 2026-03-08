@@ -1,8 +1,8 @@
 $kind: http-request
-name: 'Create User'
+name: 'Create Role'
 method: POST
-url: '{{baseUrl}}/api/v1/usuarios'
-order: 4000
+url: '{{baseUrl}}/api/v1/catalogos/roles'
+order: 2000
 headers:
   - key: Content-Type
     value: application/json
@@ -10,13 +10,9 @@ body:
   type: json
   content: |-
     {
-      "Email": "nuevo@demo.com",
-      "Nombre": "Carlos",
-      "PrimerApellido": "Ramírez",
-      "SegundoApellido": "Torres",
-      "Password": "User1234!",
-      "id": 1,
-      "Roles": []
+      "Name": "NuevoRol",
+      "Descripcion": "Descripción del nuevo rol",
+      "id": 1
     }
 scripts:
   - type: afterResponse

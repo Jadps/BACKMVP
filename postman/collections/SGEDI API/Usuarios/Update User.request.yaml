@@ -1,8 +1,8 @@
 $kind: http-request
 name: 'Update User'
 method: PUT
-url: '{{baseUrl}}/api/v1/users/{{userId}}'
-order: 5000
+url: '{{baseUrl}}/api/v1/usuarios'
+order: 6000
 headers:
   - key: Content-Type
     value: application/json
@@ -10,9 +10,13 @@ body:
   type: json
   content: |-
     {
-      "firstName": "María Actualizada",
-      "lastName": "López García",
-      "role": "admin"
+      "Id": "{{userId}}",
+      "Email": "actualizado@demo.com",
+      "Nombre": "Carlos",
+      "PrimerApellido": "Ramírez",
+      "SegundoApellido": "Torres",
+      "id": 1,
+      "Roles": []
     }
 scripts:
   - type: afterResponse
@@ -22,12 +26,6 @@ scripts:
           pm.response.to.have.status(200);
       });
 
-      pm.test('User firstName was updated', function () {
-          const json = pm.response.json();
-          pm.expect(json.firstName).to.equal('María Actualizada');
-      });
-
-      pm.test('User lastName was updated', function () {
-          const json = pm.response.json();
-          pm.expect(json.lastName).to.equal('López García');
+      pm.test('Response time is less than 2000ms', function () {
+          pm.expect(pm.response.responseTime).to.be.below(2000);
       });

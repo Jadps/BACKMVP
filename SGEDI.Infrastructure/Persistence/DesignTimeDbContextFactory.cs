@@ -14,6 +14,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
     private class DesignTimeCurrentTenantService : ICurrentTenantService
     {
         public int? TenantId => null;
+        public string? UserId => null;
         public void SetTenantId(int tenantId) { }
     }
 

@@ -29,6 +29,8 @@ public class CurrentTenantService : ICurrentTenantService
         }
     }
 
+    public string? UserId => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
     public void SetTenantId(int tenantId)
     {
         _tenantId = tenantId;

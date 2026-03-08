@@ -3,21 +3,118 @@ using Microsoft.EntityFrameworkCore;
 using SGEDI.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using SGEDI.Application.Interfaces;
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace SGEDI.Infrastructure.Persistence;
 public class ApplicationDbContext : IdentityDbContext<Usuario, Rol, int>
 {
     private readonly int? _tenantId;
+    private readonly string? _userId;
 
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
         ICurrentTenantService currentTenantService) : base(options) 
     { 
         _tenantId = currentTenantService.TenantId;
+        _userId = currentTenantService.UserId;
     }
 
     public DbSet<Modulo> Modulos => Set<Modulo>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var auditEntries = OnBeforeSaveChanges();
+        var result = await base.SaveChangesAsync(cancellationToken);
+        await OnAfterSaveChanges(auditEntries);
+        return result;
+    }
+
+    private List<AuditEntry> OnBeforeSaveChanges()
+    {
+        ChangeTracker.DetectChanges();
+        var auditEntries = new List<AuditEntry>();
+
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.Entity is AuditLog || entry.State == EntityState.Detached || entry.State == EntityState.Unchanged)
+                continue;
+
+            var auditEntry = new AuditEntry(entry);
+            auditEntry.TableName = entry.Entity.GetType().Name;
+            auditEntry.UserId = _userId; 
+            auditEntry.TenantId = _tenantId;
+            auditEntries.Add(auditEntry);
+
+            foreach (var property in entry.Properties)
+            {
+                string propertyName = property.Metadata.Name;
+                if (property.Metadata.IsPrimaryKey())
+                {
+                    auditEntry.KeyValues[propertyName] = property.CurrentValue!;
+                    continue;
+                }
+
+                switch (entry.State)
+                {
+                    case EntityState.Added:
+                        auditEntry.AuditType = "Create";
+                        auditEntry.NewValues[propertyName] = property.CurrentValue!;
+                        break;
+
+                    case EntityState.Deleted:
+                        auditEntry.AuditType = "Delete";
+                        auditEntry.OldValues[propertyName] = property.OriginalValue!;
+                        break;
+
+                    case EntityState.Modified:
+                        if (property.IsModified)
+                        {
+                            auditEntry.ChangedColumns.Add(propertyName);
+                            auditEntry.AuditType = "Update";
+                            auditEntry.OldValues[propertyName] = property.OriginalValue!;
+                            auditEntry.NewValues[propertyName] = property.CurrentValue!;
+                        }
+                        break;
+                }
+            }
+        }
+
+        foreach (var auditEntry in auditEntries.Where(_ => !_.HasTemporaryProperties))
+        {
+            AuditLogs.Add(auditEntry.ToAudit());
+        }
+
+        return auditEntries.Where(_ => _.HasTemporaryProperties).ToList();
+    }
+
+    private Task OnAfterSaveChanges(List<AuditEntry> auditEntries)
+    {
+        if (auditEntries == null || auditEntries.Count == 0)
+            return Task.CompletedTask;
+
+        foreach (var auditEntry in auditEntries)
+        {
+            foreach (var prop in auditEntry.TemporaryProperties)
+            {
+                if (prop.Metadata.IsPrimaryKey())
+                {
+                    auditEntry.KeyValues[prop.Metadata.Name] = prop.CurrentValue!;
+                }
+                else
+                {
+                    auditEntry.NewValues[prop.Metadata.Name] = prop.CurrentValue!;
+                }
+            }
+            AuditLogs.Add(auditEntry.ToAudit());
+        }
+
+        return base.SaveChangesAsync();
+    }
 
 protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
@@ -79,6 +176,12 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 
         entity.HasQueryFilter(r => !r.Borrado && (!_tenantId.HasValue || r.TenantId == _tenantId.Value));
     });
+    modelBuilder.Entity<AuditLog>(entity => {
+        entity.ToTable("AuditLogs");
+        entity.HasKey(a => a.Id);
+        entity.HasQueryFilter(a => !_tenantId.HasValue || a.TenantId == _tenantId.Value);
+    });
+
     modelBuilder.Entity<IdentityUserRole<int>>().ToTable("UsuariosRoles");
     modelBuilder.Entity<IdentityUserClaim<int>>().ToTable("UsuariosClaims");
     modelBuilder.Entity<IdentityUserLogin<int>>().ToTable("UsuariosLogins");

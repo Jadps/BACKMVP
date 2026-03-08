@@ -1,8 +1,5 @@
 using MVP.Application;
 using MVP.Infrastructure;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using MVP.Application.Interfaces;
 using MVP.WebAPI.Services;
 using Serilog;
@@ -10,6 +7,8 @@ using Asp.Versioning;
 using MVP.WebAPI.Middleware;
 using Microsoft.AspNetCore.Authorization;
 using Scalar.AspNetCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,25 +41,7 @@ builder.Services.AddAuthorization(options =>
         .Build();
 });
 
-var secretKey = builder.Configuration["Config:SecretKey"];
-if (string.IsNullOrEmpty(secretKey))
-{
-    throw new InvalidOperationException("La clave JWT secreta (Config:SecretKey) no está configurada.");
-}
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.RequireHttpsMetadata = false;
-        options.SaveToken = true;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-            ValidateIssuer = false,
-            ValidateAudience = false
-        };
-    });
+builder.Services.AddInfrastructureSecurity(builder.Configuration);
 
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
@@ -80,5 +61,27 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+app.MapHealthChecks("/api/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var result = JsonSerializer.Serialize(new
+        {
+            status = report.Status.ToString(),
+            duration = report.TotalDuration,
+            checks = report.Entries.Select(e => new
+            {
+                name    = e.Key,
+                status  = e.Value.Status.ToString(),
+                duration = e.Value.Duration,
+                description = e.Value.Description,
+                tags    = e.Value.Tags
+            })
+        });
+        await context.Response.WriteAsync(result);
+    }
+}).AllowAnonymous();
 
 app.Run();

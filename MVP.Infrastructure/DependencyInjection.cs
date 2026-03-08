@@ -41,6 +41,9 @@ public static class DependencyInjection
             services.AddScoped(providerType, implementation);
         }
 
+        services.AddHealthChecks()
+            .AddDbContextCheck<ApplicationDbContext>(name: "database", tags: ["db", "sql"]);
+
         return services;
     }
 }

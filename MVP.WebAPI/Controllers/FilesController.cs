@@ -51,7 +51,6 @@ public class FilesController : ControllerBase
         if (!result.Succeeded)
             return NotFound(new { result.Errors });
 
-        // Assuming you might want to attach original filename, but here we just stream it
         return File(result.Value!, "application/octet-stream");
     }
 

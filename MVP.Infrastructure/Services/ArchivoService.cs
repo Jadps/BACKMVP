@@ -32,14 +32,12 @@ public class ArchivoService : IArchivoService
             return ApplicationResult<Archivo>.Failure(new[] { "No se puede subir un archivo sin un TenantId activo." }, ErrorType.Validation);
         }
 
-        // 1. Upload to SFTP
         var sftpResult = await _fileStorageService.UploadFileAsync(fileStream, fileName, contentType);
         if (!sftpResult.Succeeded)
         {
             return ApplicationResult<Archivo>.Failure(sftpResult.Errors, sftpResult.ErrorType);
         }
 
-        // 2. Register in Database
         var extension = Path.GetExtension(fileName);
         var archivo = new Archivo
         {
@@ -78,7 +76,6 @@ public class ArchivoService : IArchivoService
             return ApplicationResult.Failure(new[] { "Archivo no encontrado o acceso denegado." }, ErrorType.NotFound);
         }
 
-        // Logical delete only. We intentionally DO NOT delete from SFTP to preserve history.
         archivo.Borrado = true;
         await _dbContext.SaveChangesAsync();
 

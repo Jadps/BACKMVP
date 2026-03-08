@@ -17,6 +17,12 @@ public static class DbInitializer
         try
         {
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            
+            if (context.Database.IsRelational())
+            {
+                await context.Database.MigrateAsync();
+            }
+
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Usuario>>();
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Rol>>();
             

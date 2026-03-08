@@ -4,6 +4,7 @@ using MVP.Application.DTOs;
 using MVP.Application.Interfaces;
 using System.Threading.Tasks;
 using Asp.Versioning;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace MVP.WebAPI.Controllers;
 
@@ -20,6 +21,7 @@ public class AuthController : ControllerBase
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting("StrictPolicy")]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDTO model)
     {
@@ -54,6 +56,7 @@ public class AuthController : ControllerBase
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting("StrictPolicy")]
     [HttpPost("refresh-token")]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDTO model)
     {
@@ -67,6 +70,36 @@ public class AuthController : ControllerBase
         if (result.ErrorType == ErrorType.Unauthorized)
         {
             return Unauthorized(new { message = result.Errors.FirstOrDefault() ?? "No autorizado." });
+        }
+
+        return BadRequest(new { errors = result.Errors });
+    }
+
+    [AllowAnonymous]
+    [EnableRateLimiting("StrictPolicy")]
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO model)
+    {
+        var result = await _authService.ForgotPasswordAsync(model);
+        
+        if (result.Succeeded)
+        {
+            return Ok(new { message = "Si el correo está registrado, hemos enviado las instrucciones para restablecer tu contraseña." });
+        }
+
+        return BadRequest(new { errors = result.Errors });
+    }
+
+    [AllowAnonymous]
+    [EnableRateLimiting("StrictPolicy")]
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO model)
+    {
+        var result = await _authService.ResetPasswordAsync(model);
+        
+        if (result.Succeeded)
+        {
+            return Ok(new { message = "La contraseña ha sido restablecida exitosamente." });
         }
 
         return BadRequest(new { errors = result.Errors });

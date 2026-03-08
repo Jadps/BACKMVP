@@ -18,11 +18,13 @@ public class AuthService : IAuthService
 {
     private readonly UserManager<Usuario> _userManager;
     private readonly IConfiguration _configuration;
+    private readonly IEmailService _emailService;
 
-    public AuthService(UserManager<Usuario> userManager, IConfiguration configuration)
+    public AuthService(UserManager<Usuario> userManager, IConfiguration configuration, IEmailService emailService)
     {
         _userManager = userManager;
         _configuration = configuration;
+        _emailService = emailService;
     }
 
     public async Task<ApplicationResult<AuthResponseDTO>> LoginAsync(LoginDTO model)
@@ -61,6 +63,58 @@ public class AuthService : IAuthService
         }
 
         return ApplicationResult<AuthResponseDTO>.Success(await GenerarYAsignarTokensAsync(user));
+    }
+
+    public async Task<ApplicationResult> ForgotPasswordAsync(ForgotPasswordDTO model)
+    {
+        var user = await _userManager.FindByEmailAsync(model.Email);
+        if (user == null || user.Borrado)
+        {
+            return ApplicationResult.Success();
+        }
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        
+        var frontendUrl = _configuration["Config:FrontendUrl"] ?? "http://localhost:4200";
+        var resetLink = $"{frontendUrl}/reset-password?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Email!)}";
+
+        var subject = "Recuperación de Contraseña - SGEDI";
+        var body = $@"
+            <h3>Recuperación de Contraseña</h3>
+            <p>Hemos recibido una solicitud para cambiar tu contraseña.</p>
+            <p>Haz clic en el siguiente enlace para establecer una nueva contraseña:</p>
+            <p><a href='{resetLink}'>Recuperar mi contraseña</a></p>
+            <br/>
+            <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
+        ";
+
+        var emailResult = await _emailService.SendEmailAsync(user.Email!, subject, body);
+
+        if (!emailResult.Succeeded)
+        {
+            return ApplicationResult.Failure(emailResult.Errors, ErrorType.Unexpected);
+        }
+
+        return ApplicationResult.Success();
+    }
+
+    public async Task<ApplicationResult> ResetPasswordAsync(ResetPasswordDTO model)
+    {
+        var user = await _userManager.FindByEmailAsync(model.Email);
+        if (user == null || user.Borrado)
+        {
+            return ApplicationResult.Failure(new[] { "Token o usuario inválido." }, ErrorType.Validation);
+        }
+
+        var resetResult = await _userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
+        if (!resetResult.Succeeded)
+        {
+            var errors = new List<string>();
+            foreach(var err in resetResult.Errors) errors.Add(err.Description);
+            return ApplicationResult.Failure(errors, ErrorType.Validation);
+        }
+
+        return ApplicationResult.Success();
     }
 
     private async Task<AuthResponseDTO> GenerarYAsignarTokensAsync(Usuario user)

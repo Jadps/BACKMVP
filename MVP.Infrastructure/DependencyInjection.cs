@@ -29,6 +29,9 @@ public static class DependencyInjection
         services.Configure<MVP.Infrastructure.Configuration.SftpStorageOptions>(configuration.GetSection(MVP.Infrastructure.Configuration.SftpStorageOptions.SectionName));
         services.AddScoped<MVP.Application.Interfaces.IFileStorageService, MVP.Infrastructure.Services.SftpStorageService>();
 
+        services.Configure<MVP.Infrastructure.Configuration.SmtpEmailOptions>(configuration.GetSection(MVP.Infrastructure.Configuration.SmtpEmailOptions.SectionName));
+        services.AddScoped<MVP.Application.Interfaces.IEmailService, MVP.Infrastructure.Services.SmtpEmailService>();
+
         services.AddScoped<MVP.Application.Interfaces.IIdentityService, MVP.Infrastructure.Services.IdentityService>();
         services.AddScoped<MVP.Application.Interfaces.IAuthService, MVP.Infrastructure.Services.AuthService>();
 

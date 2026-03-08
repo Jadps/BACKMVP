@@ -31,6 +31,20 @@ public class IdentityService : IIdentityService
             .ToListAsync();
     }
 
+    public async Task<(List<Usuario> Items, int TotalCount)> GetUsuariosActivosPagedAsync(int pageNumber, int pageSize)
+    {
+        var query = _userManager.Users.Where(u => !u.Borrado);
+        int totalCount = await query.CountAsync();
+        
+        var items = await query
+            .Include(u => u.UserRoles)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+            
+        return (items, totalCount);
+    }
+
     public async Task<Usuario?> GetUsuarioActivoByUidAsync(Guid uid)
     {
         return await _userManager.Users

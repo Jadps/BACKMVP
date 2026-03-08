@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using SGEDI.Application.Interfaces;
+using SGEDI.Domain.Constants;
 using System.Security.Claims;
 
 namespace SGEDI.WebAPI.Services;
@@ -31,7 +32,7 @@ public class CurrentTenantService : ICurrentTenantService
 
     public string? UserId => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-    public bool IsSuperAdmin => _httpContextAccessor.HttpContext?.User?.IsInRole("SuperAdmin") ?? false;
+    public bool IsSuperAdmin => _httpContextAccessor.HttpContext?.User?.IsInRole(AppRoles.GlobalAdmin) ?? false;
 
     public void SetTenantId(int tenantId)
     {

@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace SGEDI.Application.Services.Catalogos
 {
@@ -17,21 +18,32 @@ namespace SGEDI.Application.Services.Catalogos
         private readonly RoleManager<Rol> _roleManager;
         private readonly IMapper _mapper;
         private readonly IRepository<Modulo> _moduloRepository;
+        private readonly IMemoryCache _cache;
+        private const string RolesCacheKey = "roles_cache";
+        private const string ModulosCacheKey = "modulos_cache";
 
         public CatalogoService(
             RoleManager<Rol> roleManager, 
             IMapper mapper, 
-            IRepository<Modulo> moduloRepository)
+            IRepository<Modulo> moduloRepository,
+            IMemoryCache cache)
         {
             _roleManager = roleManager;
             _mapper = mapper;
             _moduloRepository = moduloRepository;
+            _cache = cache;
         }
 
         public async Task<List<RolDTO>> GetRolesAsync()
         {
-            var roles = await _roleManager.Roles.Where(r => !r.Borrado).ToListAsync();
-            return _mapper.Map<List<RolDTO>>(roles);
+            if (!_cache.TryGetValue(RolesCacheKey, out List<RolDTO>? cachedRoles) || cachedRoles == null)
+            {
+                var roles = await _roleManager.Roles.Where(r => !r.Borrado).ToListAsync();
+                cachedRoles = _mapper.Map<List<RolDTO>>(roles);
+                
+                _cache.Set(RolesCacheKey, cachedRoles, TimeSpan.FromHours(1));
+            }
+            return cachedRoles;
         }
 
         public async Task CrearRolAsync(RolDTO dto)
@@ -50,16 +62,24 @@ namespace SGEDI.Application.Services.Catalogos
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
                 throw new Exception($"Error al crear el rol: {errors}");
             }
+            
+            _cache.Remove(RolesCacheKey);
         }
 
         public async Task<List<ModuloDTO>> GetModulosMenuAsync()
         {
-            var modulos = await _moduloRepository.GetAllAsync(
-                filter: m => m.PadreId == null,
-                m => m.SubModulos
-            );
+            if (!_cache.TryGetValue(ModulosCacheKey, out List<ModuloDTO>? cachedModulos) || cachedModulos == null)
+            {
+                var modulos = await _moduloRepository.GetAllAsync(
+                    filter: m => m.PadreId == null,
+                    m => m.SubModulos
+                );
 
-            return _mapper.Map<List<ModuloDTO>>(modulos);
+                cachedModulos = _mapper.Map<List<ModuloDTO>>(modulos);
+                _cache.Set(ModulosCacheKey, cachedModulos, TimeSpan.FromHours(1));
+            }
+
+            return cachedModulos;
         }
     }
 }

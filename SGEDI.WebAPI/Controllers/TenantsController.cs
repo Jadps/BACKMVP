@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Asp.Versioning;
 using SGEDI.Application.DTOs;
 using SGEDI.Application.Interfaces;
+using SGEDI.Domain.Constants;
 
 namespace SGEDI.WebAPI.Controllers;
 
@@ -31,7 +32,7 @@ public class TenantsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Roles = AppRoles.GlobalAdmin)]
     public async Task<IActionResult> Post(TenantDTO dto)
     {
         var id = await _service.CrearAsync(dto);
@@ -39,7 +40,7 @@ public class TenantsController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Roles = AppRoles.GlobalAdmin)]
     public async Task<IActionResult> Put(TenantDTO dto)
     {
         await _service.ActualizarAsync(dto);

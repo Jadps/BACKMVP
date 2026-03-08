@@ -52,6 +52,39 @@ namespace SGEDI.Application.Services.Usuarios
             }).ToList();
         }
 
+        public async Task<PagedResult<UsuarioDTO>> GetPagedAsync(int pageNumber, int pageSize)
+        {
+            var result = await _identityService.GetUsuariosActivosPagedAsync(pageNumber, pageSize);
+
+            var roleIds = result.Items
+                .SelectMany(u => u.UserRoles)
+                .Select(ur => ur.RoleId)
+                .Distinct()
+                .ToList();
+
+            var roles = await _identityService.GetRolesByIdsAsync(roleIds);
+            var rolesPorId = roles.ToDictionary(r => r.Id);
+
+            var dtos = result.Items.Select(user =>
+            {
+                var dto = _mapper.Map<UsuarioDTO>(user);
+                dto.NombreCompleto = user.NombreCompleto;
+                dto.Roles = user.UserRoles
+                    .Where(ur => rolesPorId.ContainsKey(ur.RoleId))
+                    .Select(ur => _mapper.Map<RolDTO>(rolesPorId[ur.RoleId]))
+                    .ToList();
+                return dto;
+            }).ToList();
+            
+            return new PagedResult<UsuarioDTO>
+            {
+                Items = dtos,
+                TotalCount = result.TotalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+        }
+
         public async Task<UsuarioDTO?> GetByIdAsync(Guid id)
         {
             if (id == Guid.Empty) return null;

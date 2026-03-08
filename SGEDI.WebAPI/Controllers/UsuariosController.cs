@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Asp.Versioning;
 using SGEDI.Application.DTOs;
 using SGEDI.Application.Interfaces.Usuarios;
+using SGEDI.Domain.Constants;
 
 namespace SGEDI.WebAPI.Controllers
 {
@@ -27,7 +28,7 @@ namespace SGEDI.WebAPI.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "SuperAdmin,TenantAdmin")]
+        [Authorize(Roles = AppRoles.GlobalAdmin + "," + AppRoles.TenantAdmin)]
         public async Task<IActionResult> Post(UsuarioDTO dto)
         {
             var result = await _service.CrearAsync(dto);
@@ -35,7 +36,7 @@ namespace SGEDI.WebAPI.Controllers
         }
 
         [HttpPut]
-        [Authorize(Roles = "SuperAdmin,TenantAdmin")]
+        [Authorize(Roles = AppRoles.GlobalAdmin + "," + AppRoles.TenantAdmin)]
         public async Task<IActionResult> Put(UsuarioDTO dto)
         {
             var result = await _service.ActualizarAsync(dto);
@@ -43,7 +44,7 @@ namespace SGEDI.WebAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "SuperAdmin,TenantAdmin")]
+        [Authorize(Roles = AppRoles.GlobalAdmin + "," + AppRoles.TenantAdmin)]
         public async Task<IActionResult> Delete(Guid id)
         {
             var borrado = await _service.BorrarAsync(id);

@@ -36,6 +36,33 @@ namespace SGEDI.Infrastructure.Repositories
             return await query.ToListAsync();
         }
 
+        public async Task<(List<T> Items, int TotalCount)> GetPagedAsync(
+            int pageNumber,
+            int pageSize,
+            Expression<Func<T, bool>>? filter = null,
+            params Expression<Func<T, object>>[] includeProperties)
+        {
+            IQueryable<T> query = DbSet;
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+            int totalCount = await query.CountAsync();
+
+            foreach (var includeProp in includeProperties)
+            {
+                query = query.Include(includeProp);
+            }
+
+            var items = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
         public async Task<T?> GetFirstOrDefaultAsync(
             Expression<Func<T, bool>> filter, 
             params Expression<Func<T, object>>[] includeProperties)

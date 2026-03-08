@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using SGEDI.Application.DTOs;
 using SGEDI.Application.Interfaces;
+using SGEDI.Domain.Constants;
 using SGEDI.Domain.Entities;
 using SGEDI.Domain.Interfaces;
 
@@ -27,13 +28,11 @@ public class OnboardingService : IOnboardingService
         await _unitOfWork.BeginTransactionAsync();
         try
         {
-            // 1. Ensure TenantAdmin role exists globally
-            if (!await _roleManager.RoleExistsAsync("TenantAdmin"))
+            if (!await _roleManager.RoleExistsAsync(AppRoles.TenantAdmin))
             {
-                await _roleManager.CreateAsync(new Rol { Name = "TenantAdmin", NormalizedName = "TENANTADMIN" });
+                await _roleManager.CreateAsync(new Rol { Name = AppRoles.TenantAdmin, NormalizedName = AppRoles.TenantAdmin.ToUpper() });
             }
 
-            // 2. Create Tenant
             var tenant = new Tenant
             {
                 Nombre = request.EmpresaNombre,
@@ -42,9 +41,8 @@ public class OnboardingService : IOnboardingService
             };
 
             await _unitOfWork.Repository<Tenant>().AddAsync(tenant);
-            await _unitOfWork.CommitAsync(); // Gets the Id generated
+            await _unitOfWork.CommitAsync();
 
-            // 3. Create initial Admin user
             var adminUser = new Usuario
             {
                 UserName = request.AdminEmail,
@@ -65,7 +63,7 @@ public class OnboardingService : IOnboardingService
                 return ApplicationResult.Failure(errors);
             }
 
-            var roleResult = await _userManager.AddToRoleAsync(adminUser, "TenantAdmin");
+            var roleResult = await _userManager.AddToRoleAsync(adminUser, AppRoles.TenantAdmin);
             if (!roleResult.Succeeded)
             {
                 await _unitOfWork.RollbackTransactionAsync();

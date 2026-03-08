@@ -26,6 +26,18 @@ public class TenantService : ITenantService
         return _mapper.Map<List<TenantDTO>>(tenants);
     }
 
+    public async Task<PagedResult<TenantDTO>> GetPagedAsync(int pageNumber, int pageSize)
+    {
+        var result = await _uow.Repository<Tenant>().GetPagedAsync(pageNumber, pageSize);
+        return new PagedResult<TenantDTO>
+        {
+            Items = _mapper.Map<List<TenantDTO>>(result.Items),
+            TotalCount = result.TotalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+    }
+
     public async Task<TenantDTO?> GetByIdAsync(Guid id)
     {
         var tenant = await _uow.Repository<Tenant>().GetFirstOrDefaultAsync(t => t.Uid == id);

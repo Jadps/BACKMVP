@@ -1,0 +1,112 @@
+using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using MVP.Application.DTOs;
+using MVP.Application.Interfaces;
+using MVP.Domain.Entities;
+
+namespace MVP.Infrastructure.Services;
+
+public class AuthService : IAuthService
+{
+    private readonly UserManager<Usuario> _userManager;
+    private readonly IConfiguration _configuration;
+
+    public AuthService(UserManager<Usuario> userManager, IConfiguration configuration)
+    {
+        _userManager = userManager;
+        _configuration = configuration;
+    }
+
+    public async Task<AuthResponseDTO?> LoginAsync(LoginDTO model)
+    {
+        var user = await _userManager.FindByNameAsync(model.Email);
+        
+        if (user != null && !user.Borrado && await _userManager.CheckPasswordAsync(user, model.Password))
+        {
+            return await GenerarYAsignarTokensAsync(user);
+        }
+        return null;
+    }
+
+    public async Task LogoutAsync(string? userEmail)
+    {
+        if (!string.IsNullOrEmpty(userEmail))
+        {
+            var user = await _userManager.FindByNameAsync(userEmail);
+            if (user != null)
+            {
+                user.RefreshToken = null;
+                user.RefreshTokenExpiration = null;
+                await _userManager.UpdateAsync(user);
+            }
+        }
+    }
+
+    public async Task<AuthResponseDTO?> RefreshTokenAsync(RefreshTokenRequestDTO model)
+    {
+        var user = await _userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == model.RefreshToken);
+        
+        if (user == null || user.Borrado || user.RefreshTokenExpiration <= DateTime.UtcNow)
+        {
+            return null;
+        }
+
+        return await GenerarYAsignarTokensAsync(user);
+    }
+
+    private async Task<AuthResponseDTO> GenerarYAsignarTokensAsync(Usuario user)
+    {
+        var userRoles = await _userManager.GetRolesAsync(user);
+
+        var authClaims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.UserName ?? string.Empty),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        };
+
+        if (user.TenantId.HasValue)
+        {
+            authClaims.Add(new Claim("TenantId", user.TenantId.Value.ToString()));
+        }
+
+        foreach (var userRole in userRoles)
+        {
+            authClaims.Add(new Claim(ClaimTypes.Role, userRole));
+        }
+
+        var secretKey = _configuration["Config:SecretKey"];
+        if (string.IsNullOrEmpty(secretKey))
+        {
+            throw new InvalidOperationException("Error de configuración de seguridad.");
+        }
+
+        var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+
+        var token = new JwtSecurityToken(
+            expires: DateTime.UtcNow.AddMinutes(15),
+            claims: authClaims,
+            signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
+        );
+
+        var refreshToken = Guid.NewGuid().ToString();
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiration = DateTime.UtcNow.AddDays(7);
+        await _userManager.UpdateAsync(user);
+
+        return new AuthResponseDTO
+        {
+            AccessToken = new JwtSecurityTokenHandler().WriteToken(token),
+            RefreshToken = refreshToken,
+            Expiration = token.ValidTo
+        };
+    }
+}

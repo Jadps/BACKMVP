@@ -27,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped(typeof(MVP.Domain.Interfaces.IRepository<>), typeof(MVP.Infrastructure.Repositories.Repository<>));
 
         services.AddScoped<MVP.Application.Interfaces.IIdentityService, MVP.Infrastructure.Services.IdentityService>();
+        services.AddScoped<MVP.Application.Interfaces.IAuthService, MVP.Infrastructure.Services.AuthService>();
 
         services.AddScoped<MVP.Domain.Interfaces.IUnitOfWork, UnitOfWork>();
 

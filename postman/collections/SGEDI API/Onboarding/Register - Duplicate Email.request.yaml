@@ -14,7 +14,7 @@ body:
     {
       "EmpresaNombre": "Empresa Duplicada",
       "Dominio": "duplicada",
-      "AdminEmail": "admin@sgedi.com",
+      "AdminEmail": "admin@MVP.com",
       "AdminPassword": "Admin1234!",
       "AdminNombre": "Ana",
       "AdminPrimerApellido": "Martínez"

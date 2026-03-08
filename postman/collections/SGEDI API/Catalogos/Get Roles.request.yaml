@@ -21,7 +21,7 @@ scripts:
           if (json.length > 0) {
               json.forEach(function (rol) {
                   pm.expect(rol).to.have.property('id');
-                  pm.expect(rol).to.have.property('nombre');
+                  pm.expect(rol).to.have.property('name');
               });
           }
       });

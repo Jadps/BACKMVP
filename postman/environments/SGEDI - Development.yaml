@@ -1,4 +1,4 @@
-name: 'SGEDI - Development'
+name: 'MVP - Development'
 values:
   - key: baseUrl
     value: 'http://localhost:5095'

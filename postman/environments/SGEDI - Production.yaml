@@ -1,7 +1,7 @@
-name: 'SGEDI - Production'
+name: 'MVP - Production'
 values:
   - key: baseUrl
-    value: 'https://api.sgedi.com'
+    value: 'https://api.MVP.com'
     enabled: true
     type: default
   - key: token

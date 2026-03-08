@@ -1,9 +1,9 @@
 $kind: collection
-name: SGEDI API
+name: MVP API
 description: |-
-  # SGEDI API
+  # MVP API
 
-  Colección principal para la API del sistema SGEDI. Incluye endpoints de autenticación, onboarding, gestión de tenants, usuarios y catálogos.
+  Colección principal para la API del sistema MVP. Incluye endpoints de autenticación, onboarding, gestión de tenants, usuarios y catálogos.
 
   ## Variables de colección
   - `baseUrl`: URL base de la API (sobreescrita por el entorno activo)

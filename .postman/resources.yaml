@@ -1,0 +1,6 @@
+# Use this workspace to collaborate
+workspace:
+  id: 2d649a32-4e1c-4674-8f98-0bbab1c1a3d9
+localResources:
+  specs:
+    - ..\MVP.WebAPI\obj\Debug\net10.0\EndpointInfo\MVP.WebAPI.json

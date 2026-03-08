@@ -1,0 +1,46 @@
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using MVP.Infrastructure.Persistence;
+using MVP.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
+
+namespace MVP.Infrastructure;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"),
+                b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
+
+
+        services.AddIdentityCore<Usuario>(options => {
+            options.Password.RequireDigit = false;
+        })
+        .AddRoles<Rol>()
+        .AddEntityFrameworkStores<ApplicationDbContext>();
+
+
+
+        services.AddScoped(typeof(MVP.Domain.Interfaces.IRepository<>), typeof(MVP.Infrastructure.Repositories.Repository<>));
+
+        services.AddScoped<MVP.Application.Interfaces.IIdentityService, MVP.Infrastructure.Services.IdentityService>();
+
+        services.AddScoped<MVP.Domain.Interfaces.IUnitOfWork, UnitOfWork>();
+
+        services.AddScoped<MVP.Application.Interfaces.Catalogos.IGenericCatalogService, Services.Catalogos.GenericCatalogService>();
+
+        var providerType = typeof(MVP.Application.Interfaces.Catalogos.ICatalogoProvider);
+        var implementations = typeof(DependencyInjection).Assembly.GetTypes()
+            .Where(t => providerType.IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+
+        foreach (var implementation in implementations)
+        {
+            services.AddScoped(providerType, implementation);
+        }
+
+        return services;
+    }
+}

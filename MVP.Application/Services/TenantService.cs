@@ -1,0 +1,81 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using AutoMapper;
+using MVP.Application.DTOs;
+using MVP.Application.Interfaces;
+using MVP.Domain.Entities;
+using MVP.Domain.Interfaces;
+
+namespace MVP.Application.Services;
+
+public class TenantService : ITenantService
+{
+    private readonly IUnitOfWork _uow;
+    private readonly IMapper _mapper;
+
+    public TenantService(IUnitOfWork uow, IMapper mapper)
+    {
+        _uow = uow;
+        _mapper = mapper;
+    }
+
+    public async Task<List<TenantDTO>> GetTodosAsync()
+    {
+        var tenants = await _uow.Repository<Tenant>().GetAllAsync();
+        return _mapper.Map<List<TenantDTO>>(tenants);
+    }
+
+    public async Task<PagedResult<TenantDTO>> GetPagedAsync(int pageNumber, int pageSize)
+    {
+        var result = await _uow.Repository<Tenant>().GetPagedAsync(pageNumber, pageSize);
+        return new PagedResult<TenantDTO>
+        {
+            Items = _mapper.Map<List<TenantDTO>>(result.Items),
+            TotalCount = result.TotalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+    }
+
+    public async Task<TenantDTO?> GetByIdAsync(Guid id)
+    {
+        var tenant = await _uow.Repository<Tenant>().GetFirstOrDefaultAsync(t => t.Uid == id);
+        return tenant == null ? null : _mapper.Map<TenantDTO>(tenant);
+    }
+
+    public async Task<Guid> CrearAsync(TenantDTO dto)
+    {
+        var tenant = _mapper.Map<Tenant>(dto);
+        tenant.FechaCreacion = DateTime.UtcNow;
+        
+        await _uow.Repository<Tenant>().AddAsync(tenant);
+        await _uow.CommitAsync();
+        
+        return tenant.Uid;
+    }
+
+    public async Task ActualizarAsync(TenantDTO dto)
+    {
+        if (dto.Id == null) throw new ArgumentException("El Id no puede ser nulo");
+        var tenant = await _uow.Repository<Tenant>().GetFirstOrDefaultAsync(t => t.Uid == dto.Id.Value);
+        
+        if (tenant != null)
+        {
+            _mapper.Map(dto, tenant);
+            
+            _uow.Repository<Tenant>().Update(tenant);
+            await _uow.CommitAsync();
+        }
+    }
+
+    public async Task EliminarAsync(Guid id)
+    {
+        var tenant = await _uow.Repository<Tenant>().GetFirstOrDefaultAsync(t => t.Uid == id);
+        if (tenant != null)
+        {
+            _uow.Repository<Tenant>().Remove(tenant);
+            await _uow.CommitAsync();
+        }
+    }
+}

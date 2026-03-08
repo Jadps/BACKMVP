@@ -12,7 +12,7 @@ body:
   type: json
   content: |-
     {
-      "Email": "admin@sgedi.com",
+      "Email": "admin@MVP.com",
       "Password": "Admin1234!"
     }
 scripts:

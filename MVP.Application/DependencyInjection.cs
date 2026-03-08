@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
+using FluentValidation;
 
 namespace MVP.Application;
 
@@ -9,6 +10,8 @@ public static class DependencyInjection
     {
 
         services.AddAutoMapper(config => {}, Assembly.GetExecutingAssembly());
+        
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
         services.AddScoped<Interfaces.Usuarios.IUsuarioService, Services.Usuarios.UsuarioService>();
         

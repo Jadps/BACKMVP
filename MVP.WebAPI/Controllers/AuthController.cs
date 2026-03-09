@@ -1,10 +1,11 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using MVP.Application.DTOs;
 using MVP.Application.Interfaces;
+using MVP.WebAPI.Extensions;
 using System.Threading.Tasks;
-using Asp.Versioning;
-using Microsoft.AspNetCore.RateLimiting;
 
 namespace MVP.WebAPI.Controllers;
 
@@ -26,35 +27,19 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginDTO model)
     {
         var result = await _authService.LoginAsync(model);
-        
+
         if (result.Succeeded)
         {
             var authResponse = result.Value;
-            var cookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None,
-                Expires = authResponse!.Expiration
-            };
-            Response.Cookies.Append("AccessToken", authResponse.AccessToken!, cookieOptions);
 
-            var refreshCookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None,
-                Expires = System.DateTime.UtcNow.AddDays(7)
-            };
-            Response.Cookies.Append("RefreshToken", authResponse.RefreshToken!, refreshCookieOptions);
+            Response.AppendSecureCookie("AccessToken", authResponse.AccessToken!, authResponse!.Expiration);
+            Response.AppendSecureCookie("RefreshToken", authResponse.RefreshToken!, DateTime.UtcNow.AddDays(7));
 
             return Ok(authResponse);
         }
 
         if (result.ErrorType == ErrorType.Unauthorized)
-        {
             return Unauthorized(new { message = result.Errors.FirstOrDefault() ?? "No autorizado." });
-        }
 
         return BadRequest(new { errors = result.Errors });
     }
@@ -65,11 +50,12 @@ public class AuthController : ControllerBase
     {
         var userEmail = User.Identity?.Name;
         var result = await _authService.LogoutAsync(userEmail);
-        
+
         if (result.Succeeded)
         {
-            Response.Cookies.Delete("AccessToken", new Microsoft.AspNetCore.Http.CookieOptions { Secure = true, SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None });
-            Response.Cookies.Delete("RefreshToken", new Microsoft.AspNetCore.Http.CookieOptions { Secure = true, SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None });
+            Response.DeleteSecureCookie("AccessToken");
+            Response.DeleteSecureCookie("RefreshToken");
+
             return Ok(new { message = "Sesión cerrada exitosamente (Refresh Token revocado)." });
         }
 
@@ -79,21 +65,27 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting("StrictPolicy")]
     [HttpPost("refresh-token")]
-    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDTO model)
+    public async Task<IActionResult> RefreshToken()
     {
+        var refreshToken = Request.Cookies["RefreshToken"];
+        
+        if (string.IsNullOrEmpty(refreshToken))
+            return Unauthorized(new { message = "No se encontró el token de refresco en las cookies." });
+
+        var model = new RefreshTokenRequestDTO { RefreshToken = refreshToken };
         var result = await _authService.RefreshTokenAsync(model);
         
         if (result.Succeeded)
         {
-            return Ok(result.Value);
+            var authResponse = result.Value;
+            
+            Response.AppendSecureCookie("AccessToken", authResponse.AccessToken!, authResponse!.Expiration);
+            Response.AppendSecureCookie("RefreshToken", authResponse.RefreshToken!, DateTime.UtcNow.AddDays(7));
+
+            return Ok(authResponse);
         }
 
-        if (result.ErrorType == ErrorType.Unauthorized)
-        {
-            return Unauthorized(new { message = result.Errors.FirstOrDefault() ?? "No autorizado." });
-        }
-
-        return BadRequest(new { errors = result.Errors });
+        return Unauthorized(new { message = result.Errors.FirstOrDefault() ?? "Token expirado." });
     }
 
     [AllowAnonymous]

@@ -29,7 +29,26 @@ public class AuthController : ControllerBase
         
         if (result.Succeeded)
         {
-            return Ok(result.Value);
+            var authResponse = result.Value;
+            var cookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None,
+                Expires = authResponse!.Expiration
+            };
+            Response.Cookies.Append("AccessToken", authResponse.AccessToken!, cookieOptions);
+
+            var refreshCookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None,
+                Expires = System.DateTime.UtcNow.AddDays(7)
+            };
+            Response.Cookies.Append("RefreshToken", authResponse.RefreshToken!, refreshCookieOptions);
+
+            return Ok(authResponse);
         }
 
         if (result.ErrorType == ErrorType.Unauthorized)
@@ -49,6 +68,8 @@ public class AuthController : ControllerBase
         
         if (result.Succeeded)
         {
+            Response.Cookies.Delete("AccessToken", new Microsoft.AspNetCore.Http.CookieOptions { Secure = true, SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None });
+            Response.Cookies.Delete("RefreshToken", new Microsoft.AspNetCore.Http.CookieOptions { Secure = true, SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None });
             return Ok(new { message = "Sesión cerrada exitosamente (Refresh Token revocado)." });
         }
 

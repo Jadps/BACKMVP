@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
-
+using System.Threading.Tasks;
 namespace MVP.Infrastructure;
 
 public static class IdentityConfiguration
@@ -27,6 +27,17 @@ public static class IdentityConfiguration
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
                     ValidateIssuer = false,
                     ValidateAudience = false
+                };
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        if (context.Request.Cookies.ContainsKey("AccessToken"))
+                        {
+                            context.Token = context.Request.Cookies["AccessToken"];
+                        }
+                        return Task.CompletedTask;
+                    }
                 };
             });
 

@@ -72,7 +72,8 @@ namespace MVP.Application.Services.Catalogos
             {
                 var modulos = await _moduloRepository.GetAllAsync(
                     filter: m => m.PadreId == null,
-                    m => m.SubModulos
+                    disableTracking: true, 
+                    m => m.SubModulos 
                 );
 
                 cachedModulos = _mapper.Map<List<ModuloDTO>>(modulos);

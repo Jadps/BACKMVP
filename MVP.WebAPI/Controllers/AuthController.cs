@@ -24,6 +24,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting("StrictPolicy")]
     [HttpPost("login")]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> Login([FromBody] LoginDTO model)
     {
         var result = await _authService.LoginAsync(model);
@@ -65,6 +66,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting("StrictPolicy")]
     [HttpPost("refresh-token")]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> RefreshToken()
     {
         var refreshToken = Request.Cookies["RefreshToken"];
@@ -91,6 +93,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting("StrictPolicy")]
     [HttpPost("forgot-password")]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO model)
     {
         var result = await _authService.ForgotPasswordAsync(model);
@@ -106,6 +109,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting("StrictPolicy")]
     [HttpPost("reset-password")]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO model)
     {
         var result = await _authService.ResetPasswordAsync(model);

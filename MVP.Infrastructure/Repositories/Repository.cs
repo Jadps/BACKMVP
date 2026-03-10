@@ -20,9 +20,15 @@ namespace MVP.Infrastructure.Repositories
 
         public async Task<List<T>> GetAllAsync(
             Expression<Func<T, bool>>? filter = null, 
+            bool disableTracking = true,
             params Expression<Func<T, object>>[] includeProperties)
         {
             IQueryable<T> query = DbSet;
+            if (disableTracking)
+            {
+                query = query.AsNoTracking();
+            }
+
             if (filter != null)
             {
                 query = query.Where(filter);
@@ -40,9 +46,15 @@ namespace MVP.Infrastructure.Repositories
             int pageNumber,
             int pageSize,
             Expression<Func<T, bool>>? filter = null,
+            bool disableTracking = true,
             params Expression<Func<T, object>>[] includeProperties)
         {
             IQueryable<T> query = DbSet;
+            if (disableTracking)
+            {
+                query = query.AsNoTracking();
+            }
+
             if (filter != null)
             {
                 query = query.Where(filter);
@@ -65,9 +77,15 @@ namespace MVP.Infrastructure.Repositories
 
         public async Task<T?> GetFirstOrDefaultAsync(
             Expression<Func<T, bool>> filter, 
+            bool disableTracking = true,
             params Expression<Func<T, object>>[] includeProperties)
         {
             IQueryable<T> query = DbSet;
+            if (disableTracking)
+            {
+                query = query.AsNoTracking();
+            }
+
             query = query.Where(filter);
             
             foreach (var includeProp in includeProperties)

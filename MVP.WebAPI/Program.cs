@@ -33,7 +33,16 @@ builder.Services.AddApiVersioning(options =>
 .AddMvc();
 
 builder.Services.AddMemoryCache();
-builder.Services.AddControllers();
+builder.Services.AddControllers(options => 
+{
+    options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
+});
+
+builder.Services.AddAntiforgery(options => 
+{
+    options.HeaderName = "X-XSRF-TOKEN";
+});
+
 builder.Services.AddFluentValidationAutoValidation()
                 .AddFluentValidationClientsideAdapters();
 
@@ -107,6 +116,25 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
+
+app.Use(async (context, next) =>
+{
+    var antiforgery = context.RequestServices.GetRequiredService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
+    var tokens = antiforgery.GetAndStoreTokens(context);
+    if (tokens.RequestToken != null)
+    {
+        context.Response.Cookies.Append(
+            "XSRF-TOKEN",
+            tokens.RequestToken,
+            new CookieOptions
+            {
+                HttpOnly = false,
+                Secure = true,
+                SameSite = SameSiteMode.None
+            });
+    }
+    await next();
+});
 
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {

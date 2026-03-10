@@ -33,10 +33,7 @@ builder.Services.AddApiVersioning(options =>
 .AddMvc();
 
 builder.Services.AddMemoryCache();
-builder.Services.AddControllers(options => 
-{
-    options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
-});
+builder.Services.AddControllers();
 
 builder.Services.AddAntiforgery(options => 
 {
@@ -121,6 +118,7 @@ app.Use(async (context, next) =>
 {
     var antiforgery = context.RequestServices.GetRequiredService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
     var tokens = antiforgery.GetAndStoreTokens(context);
+    
     if (tokens.RequestToken != null)
     {
         context.Response.Cookies.Append(
@@ -133,6 +131,29 @@ app.Use(async (context, next) =>
                 SameSite = SameSiteMode.None
             });
     }
+
+    if (HttpMethods.IsPost(context.Request.Method) || 
+        HttpMethods.IsPut(context.Request.Method) || 
+        HttpMethods.IsDelete(context.Request.Method))
+    {
+        var endpoint = context.GetEndpoint();
+        var ignoreAntiforgery = endpoint?.Metadata.GetMetadata<Microsoft.AspNetCore.Mvc.IgnoreAntiforgeryTokenAttribute>();
+
+        if (ignoreAntiforgery == null)
+        {
+            try
+            {
+                await antiforgery.ValidateRequestAsync(context);
+            }
+            catch (Microsoft.AspNetCore.Antiforgery.AntiforgeryValidationException)
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                await context.Response.WriteAsJsonAsync(new { message = "Antiforgery token validation failed." });
+                return;
+            }
+        }
+    }
+
     await next();
 });
 

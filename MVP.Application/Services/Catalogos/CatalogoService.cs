@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+
 using Microsoft.Extensions.Caching.Memory;
 
 namespace MVP.Application.Services.Catalogos
@@ -38,7 +38,7 @@ namespace MVP.Application.Services.Catalogos
         {
             if (!_cache.TryGetValue(RolesCacheKey, out List<RolDTO>? cachedRoles) || cachedRoles == null)
             {
-                var roles = await _roleManager.Roles.Where(r => !r.Borrado).ToListAsync();
+                var roles = await Task.Run(() => _roleManager.Roles.Where(r => !r.Borrado).ToList());
                 cachedRoles = _mapper.Map<List<RolDTO>>(roles);
                 
                 _cache.Set(RolesCacheKey, cachedRoles, TimeSpan.FromHours(1));

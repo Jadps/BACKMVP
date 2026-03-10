@@ -13,6 +13,11 @@ public static class DependencyInjection
         
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
+        services.AddMediatR(cfg => {
+            cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+            cfg.AddBehavior(typeof(MediatR.IPipelineBehavior<,>), typeof(Behaviors.ValidationBehavior<,>));
+        });
+
         services.AddScoped<Interfaces.Usuarios.IUsuarioService, Services.Usuarios.UsuarioService>();
         
         services.AddScoped<Interfaces.Catalogos.ICatalogoService, Services.Catalogos.CatalogoService>();

@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using MVP.Infrastructure.Persistence;
 using MVP.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
+using Hangfire;
+using Hangfire.PostgreSql;
 
 namespace MVP.Infrastructure;
 
@@ -51,6 +53,16 @@ public static class DependencyInjection
 
         services.AddHealthChecks()
             .AddDbContextCheck<ApplicationDbContext>(name: "database", tags: ["db", "sql"]);
+
+        services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UsePostgreSqlStorage(
+                options => options.UseNpgsqlConnection(configuration.GetConnectionString("DefaultConnection"))
+            ));
+
+        services.AddHangfireServer();
 
         return services;
     }

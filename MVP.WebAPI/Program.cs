@@ -38,6 +38,8 @@ builder.Services.AddControllers();
 builder.Services.AddAntiforgery(options => 
 {
     options.HeaderName = "X-XSRF-TOKEN";
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None;
 });
 
 builder.Services.AddFluentValidationAutoValidation()

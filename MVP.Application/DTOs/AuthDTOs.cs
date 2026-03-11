@@ -2,26 +2,10 @@ using System;
 
 namespace MVP.Application.DTOs;
 
-public class AuthResponseDTO
-{
-    public string AccessToken { get; set; } = string.Empty;
-    public string RefreshToken { get; set; } = string.Empty;
-    public DateTime Expiration { get; set; }
-}
+public record AuthResponseDTO(string AccessToken, string RefreshToken, DateTime Expiration);
 
-public class RefreshTokenRequestDTO
-{
-    public string RefreshToken { get; set; } = string.Empty;
-}
+public record RefreshTokenRequestDTO(string RefreshToken);
 
-public class ForgotPasswordDTO
-{
-    public string Email { get; set; } = string.Empty;
-}
+public record ForgotPasswordDTO(string Email);
 
-public class ResetPasswordDTO
-{
-    public string Email { get; set; } = string.Empty;
-    public string Token { get; set; } = string.Empty;
-    public string NewPassword { get; set; } = string.Empty;
-}
+public record ResetPasswordDTO(string Email, string Token, string NewPassword);

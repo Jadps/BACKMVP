@@ -14,42 +14,41 @@ using MVP.Application.Interfaces;
 using MVP.Domain.Entities;
 using MVP.Infrastructure.Identity;
 
+using Microsoft.Extensions.Options;
+using MVP.Infrastructure.Configuration;
+
 namespace MVP.Infrastructure.Services;
 
-public class AuthService : IAuthService
+public class AuthService(
+    UserManager<ApplicationUser> userManager, 
+    IOptions<JwtOptions> jwtOptions,
+    IOptions<AppOptions> appOptions,
+    IBackgroundJobClient backgroundJobs) : IAuthService
 {
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IConfiguration _configuration;
-    private readonly IEmailService _emailService;
-
-    public AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration, IEmailService emailService)
-    {
-        _userManager = userManager;
-        _configuration = configuration;
-        _emailService = emailService;
-    }
+    private readonly JwtOptions _jwt = jwtOptions.Value;
+    private readonly AppOptions _app = appOptions.Value;
 
     public async Task<ApplicationResult<AuthResponseDTO>> LoginAsync(LoginDTO model)
     {
-        var user = await _userManager.FindByNameAsync(model.Email);
+        var user = await userManager.FindByNameAsync(model.Email);
         
-        if (user != null && !user.Borrado && await _userManager.CheckPasswordAsync(user, model.Password))
+        if (user != null && !user.Borrado && await userManager.CheckPasswordAsync(user, model.Password))
         {
             return ApplicationResult<AuthResponseDTO>.Success(await GenerarYAsignarTokensAsync(user));
         }
-        return ApplicationResult<AuthResponseDTO>.Failure(new[] { "Email o contraseña incorrecta." }, ErrorType.Unauthorized);
+        return ApplicationResult<AuthResponseDTO>.Failure("Email o contraseña incorrecta.", ErrorType.Unauthorized);
     }
 
     public async Task<ApplicationResult> LogoutAsync(string? userEmail)
     {
         if (!string.IsNullOrEmpty(userEmail))
         {
-            var user = await _userManager.FindByNameAsync(userEmail);
+            var user = await userManager.FindByNameAsync(userEmail);
             if (user != null)
             {
                 user.RefreshToken = null;
                 user.RefreshTokenExpiration = null;
-                await _userManager.UpdateAsync(user);
+                await userManager.UpdateAsync(user);
             }
         }
         return ApplicationResult.Success();
@@ -57,11 +56,11 @@ public class AuthService : IAuthService
 
     public async Task<ApplicationResult<AuthResponseDTO>> RefreshTokenAsync(RefreshTokenRequestDTO model)
     {
-        var user = await _userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == model.RefreshToken);
+        var user = await userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == model.RefreshToken);
         
         if (user == null || user.Borrado || user.RefreshTokenExpiration <= DateTime.UtcNow)
         {
-            return ApplicationResult<AuthResponseDTO>.Failure(new[] { "Refresh Token inválido o expirado." }, ErrorType.Unauthorized);
+            return ApplicationResult<AuthResponseDTO>.Failure("Refresh Token inválido o expirado.", ErrorType.Unauthorized);
         }
 
         return ApplicationResult<AuthResponseDTO>.Success(await GenerarYAsignarTokensAsync(user));
@@ -69,46 +68,35 @@ public class AuthService : IAuthService
 
     public async Task<ApplicationResult> ForgotPasswordAsync(ForgotPasswordDTO model)
     {
-        var user = await _userManager.FindByEmailAsync(model.Email);
+        var user = await userManager.FindByEmailAsync(model.Email);
         if (user == null || user.Borrado)
         {
             return ApplicationResult.Success();
         }
 
-        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var token = await userManager.GeneratePasswordResetTokenAsync(user);
         
-        var frontendUrl = _configuration["Config:FrontendUrl"] ?? "http://localhost:4200";
+        var frontendUrl = _app.FrontendUrl;
         var resetLink = $"{frontendUrl}/reset-password?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Email!)}";
 
-        var subject = "Recuperación de Contraseña - SGEDI";
-        var body = $@"
-            <h3>Recuperación de Contraseña</h3>
-            <p>Hemos recibido una solicitud para cambiar tu contraseña.</p>
-            <p>Haz clic en el siguiente enlace para establecer una nueva contraseña:</p>
-            <p><a href='{resetLink}'>Recuperar mi contraseña</a></p>
-            <br/>
-            <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
-        ";
-
-        BackgroundJob.Enqueue<IEmailService>(emailService => emailService.SendEmailAsync(user.Email!, subject, body, true));
+        backgroundJobs.Enqueue<IEmailService>(emailService => 
+            emailService.SendPasswordResetEmailAsync(user.Email!, resetLink));
 
         return ApplicationResult.Success();
     }
 
     public async Task<ApplicationResult> ResetPasswordAsync(ResetPasswordDTO model)
     {
-        var user = await _userManager.FindByEmailAsync(model.Email);
+        var user = await userManager.FindByEmailAsync(model.Email);
         if (user == null || user.Borrado)
         {
-            return ApplicationResult.Failure(new[] { "Token o usuario inválido." }, ErrorType.Validation);
+            return ApplicationResult.Failure("Token o usuario inválido.", ErrorType.Validation);
         }
 
-        var resetResult = await _userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
+        var resetResult = await userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
         if (!resetResult.Succeeded)
         {
-            var errors = new List<string>();
-            foreach(var err in resetResult.Errors) errors.Add(err.Description);
-            return ApplicationResult.Failure(errors, ErrorType.Validation);
+            return ApplicationResult.Failure(resetResult.Errors.Select(e => e.Description), ErrorType.Validation);
         }
 
         return ApplicationResult.Success();
@@ -116,7 +104,7 @@ public class AuthService : IAuthService
 
     private async Task<AuthResponseDTO> GenerarYAsignarTokensAsync(ApplicationUser user)
     {
-        var userRoles = await _userManager.GetRolesAsync(user);
+        var userRoles = await userManager.GetRolesAsync(user);
 
         var authClaims = new List<Claim>
         {
@@ -135,7 +123,7 @@ public class AuthService : IAuthService
             authClaims.Add(new Claim(ClaimTypes.Role, userRole));
         }
 
-        var secretKey = _configuration["Config:SecretKey"];
+        var secretKey = _jwt.SecretKey;
         if (string.IsNullOrEmpty(secretKey))
         {
             throw new InvalidOperationException("Error de configuración de seguridad.");
@@ -144,7 +132,9 @@ public class AuthService : IAuthService
         var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
 
         var token = new JwtSecurityToken(
-            expires: DateTime.UtcNow.AddMinutes(15),
+            issuer: _jwt.Issuer,
+            audience: _jwt.Audience,
+            expires: DateTime.UtcNow.AddMinutes(_jwt.ExpirationInMinutes),
             claims: authClaims,
             signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
         );
@@ -152,13 +142,12 @@ public class AuthService : IAuthService
         var refreshToken = Guid.NewGuid().ToString();
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiration = DateTime.UtcNow.AddDays(7);
-        await _userManager.UpdateAsync(user);
+        await userManager.UpdateAsync(user);
 
-        return new AuthResponseDTO
-        {
-            AccessToken = new JwtSecurityTokenHandler().WriteToken(token),
-            RefreshToken = refreshToken,
-            Expiration = token.ValidTo
-        };
+        return new AuthResponseDTO(
+            new JwtSecurityTokenHandler().WriteToken(token),
+            refreshToken,
+            token.ValidTo
+        );
     }
 }

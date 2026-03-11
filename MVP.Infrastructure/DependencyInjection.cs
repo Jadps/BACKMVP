@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Hangfire;
 using Hangfire.PostgreSql;
 using MVP.Infrastructure.Identity;
+using Microsoft.Extensions.Http.Resilience;
 
 namespace MVP.Infrastructure;
 
@@ -19,7 +20,7 @@ public static class DependencyInjection
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"),
                 b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
 
-        services.AddAutoMapper(cfg => {}, Assembly.GetExecutingAssembly());
+        services.AddAutoMapper(config => {}, Assembly.GetExecutingAssembly());
 
 
         services.AddIdentityCore<ApplicationUser>(options => {
@@ -30,7 +31,7 @@ public static class DependencyInjection
 
 
 
-        services.AddScoped(typeof(MVP.Domain.Interfaces.IRepository<>), typeof(MVP.Infrastructure.Repositories.Repository<>));
+        services.AddScoped<MVP.Application.Interfaces.IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
         services.Configure<MVP.Infrastructure.Configuration.SftpStorageOptions>(configuration.GetSection(MVP.Infrastructure.Configuration.SftpStorageOptions.SectionName));
         services.AddScoped<MVP.Application.Interfaces.IFileStorageService, MVP.Infrastructure.Services.SftpStorageService>();
@@ -39,10 +40,11 @@ public static class DependencyInjection
         services.Configure<MVP.Infrastructure.Configuration.SmtpEmailOptions>(configuration.GetSection(MVP.Infrastructure.Configuration.SmtpEmailOptions.SectionName));
         services.AddScoped<MVP.Application.Interfaces.IEmailService, MVP.Infrastructure.Services.SmtpEmailService>();
 
+        services.Configure<MVP.Infrastructure.Configuration.JwtOptions>(configuration.GetSection(MVP.Infrastructure.Configuration.JwtOptions.SectionName));
+        services.Configure<MVP.Infrastructure.Configuration.AppOptions>(configuration.GetSection(MVP.Infrastructure.Configuration.AppOptions.SectionName));
+
         services.AddScoped<MVP.Application.Interfaces.IIdentityService, MVP.Infrastructure.Services.IdentityService>();
         services.AddScoped<MVP.Application.Interfaces.IAuthService, MVP.Infrastructure.Services.AuthService>();
-
-        services.AddScoped<MVP.Domain.Interfaces.IUnitOfWork, UnitOfWork>();
 
         services.AddScoped<MVP.Application.Interfaces.Catalogos.IGenericCatalogService, Services.Catalogos.GenericCatalogService>();
 
@@ -54,6 +56,9 @@ public static class DependencyInjection
         {
             services.AddScoped(providerType, implementation);
         }
+
+        services.AddHttpClient("ExternalApi")
+            .AddStandardResilienceHandler();
 
         services.AddHealthChecks()
             .AddDbContextCheck<ApplicationDbContext>(name: "database", tags: ["db", "sql"]);

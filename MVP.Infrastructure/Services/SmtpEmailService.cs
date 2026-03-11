@@ -60,4 +60,35 @@ public class SmtpEmailService : IEmailService
             return ApplicationResult.Failure(new[] { $"Error enviando correo: {ex.Message}" }, ErrorType.Unexpected);
         }
     }
+
+    public async Task<ApplicationResult> SendWelcomeEmailAsync(string to, string userName)
+    {
+        var subject = "Bienvenido a SGEDI - Registro Exitoso";
+        var body = $@"
+            <div style='font-family: sans-serif; color: #333;'>
+                <h2>¡Hola {userName}!</h2>
+                <p>Tu organización ha sido registrada correctamente en la plataforma <strong>SGEDI</strong>.</p>
+                <p>Ya puedes acceder con tus credenciales de administrador.</p>
+                <br/>
+                <p>Saludos,<br/>El equipo de SGEDI</p>
+            </div>";
+
+        return await SendEmailAsync(to, subject, body, true);
+    }
+
+    public async Task<ApplicationResult> SendPasswordResetEmailAsync(string to, string resetLink)
+    {
+        var subject = "Recuperación de Contraseña - SGEDI";
+        var body = $@"
+            <div style='font-family: sans-serif; color: #333;'>
+                <h3>Recuperación de Contraseña</h3>
+                <p>Hemos recibido una solicitud para cambiar tu contraseña.</p>
+                <p>Haz clic en el siguiente enlace para establecer una nueva contraseña:</p>
+                <p><a href='{resetLink}' style='background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;'>Recuperar mi contraseña</a></p>
+                <br/>
+                <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
+            </div>";
+
+        return await SendEmailAsync(to, subject, body, true);
+    }
 }

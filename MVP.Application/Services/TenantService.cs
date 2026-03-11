@@ -1,81 +1,83 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using MVP.Application.DTOs;
 using MVP.Application.Interfaces;
 using MVP.Domain.Entities;
-using MVP.Domain.Interfaces;
 
 namespace MVP.Application.Services;
 
-public class TenantService : ITenantService
+public class TenantService(IApplicationDbContext context, IMapper mapper) : ITenantService
 {
-    private readonly IUnitOfWork _uow;
-    private readonly IMapper _mapper;
-
-    public TenantService(IUnitOfWork uow, IMapper mapper)
-    {
-        _uow = uow;
-        _mapper = mapper;
-    }
-
     public async Task<List<TenantDTO>> GetTodosAsync()
     {
-        var tenants = await _uow.Repository<Tenant>().GetAllAsync();
-        return _mapper.Map<List<TenantDTO>>(tenants);
+        return await context.Tenants.AsNoTracking()
+            .ProjectTo<TenantDTO>(mapper.ConfigurationProvider)
+            .ToListAsync();
     }
 
     public async Task<PagedResult<TenantDTO>> GetPagedAsync(int pageNumber, int pageSize)
     {
-        var result = await _uow.Repository<Tenant>().GetPagedAsync(pageNumber, pageSize);
-        return new PagedResult<TenantDTO>
-        {
-            Items = _mapper.Map<List<TenantDTO>>(result.Items),
-            TotalCount = result.TotalCount,
-            PageNumber = pageNumber,
-            PageSize = pageSize
-        };
+        var query = context.Tenants.AsNoTracking();
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .ProjectTo<TenantDTO>(mapper.ConfigurationProvider)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return new PagedResult<TenantDTO>(items, totalCount, pageNumber, pageSize);
     }
 
-    public async Task<TenantDTO?> GetByIdAsync(Guid id)
+    public async Task<ApplicationResult<TenantDTO>> GetByIdAsync(Guid id)
     {
-        var tenant = await _uow.Repository<Tenant>().GetFirstOrDefaultAsync(t => t.Uid == id);
-        return tenant == null ? null : _mapper.Map<TenantDTO>(tenant);
+        var tenant = await context.Tenants.AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Uid == id);
+            
+        return tenant == null 
+            ? ApplicationResult<TenantDTO>.Failure("Inquilino no encontrado.", ErrorType.NotFound)
+            : ApplicationResult<TenantDTO>.Success(mapper.Map<TenantDTO>(tenant));
     }
 
-    public async Task<Guid> CrearAsync(TenantDTO dto)
+    public async Task<ApplicationResult<Guid>> CrearAsync(TenantDTO dto)
     {
-        var tenant = _mapper.Map<Tenant>(dto);
+        var tenant = mapper.Map<Tenant>(dto);
         tenant.FechaCreacion = DateTime.UtcNow;
         
-        await _uow.Repository<Tenant>().AddAsync(tenant);
-        await _uow.CommitAsync();
+        await context.Tenants.AddAsync(tenant);
+        await context.SaveChangesAsync();
         
-        return tenant.Uid;
+        return ApplicationResult<Guid>.Success(tenant.Uid);
     }
 
-    public async Task ActualizarAsync(TenantDTO dto)
+    public async Task<ApplicationResult> ActualizarAsync(TenantDTO dto)
     {
-        if (dto.Id == null) throw new ArgumentException("El Id no puede ser nulo");
-        var tenant = await _uow.Repository<Tenant>().GetFirstOrDefaultAsync(t => t.Uid == dto.Id.Value);
+        if (dto.Id == null) 
+            return ApplicationResult.Failure("El Id no puede ser nulo", ErrorType.Validation);
         
-        if (tenant != null)
-        {
-            _mapper.Map(dto, tenant);
+        var tenant = await context.Tenants
+            .FirstOrDefaultAsync(t => t.Uid == dto.Id.Value);
+        
+        if (tenant == null)
+            return ApplicationResult.Failure("El inquilino no existe.", ErrorType.NotFound);
+
+        mapper.Map(dto, tenant);
+        await context.SaveChangesAsync();
+        
+        return ApplicationResult.Success();
+    }
+
+    public async Task<ApplicationResult> EliminarAsync(Guid id)
+    {
+        var tenant = await context.Tenants
+            .FirstOrDefaultAsync(t => t.Uid == id);
             
-            _uow.Repository<Tenant>().Update(tenant);
-            await _uow.CommitAsync();
-        }
-    }
+        if (tenant == null)
+            return ApplicationResult.Failure("El inquilino no existe.", ErrorType.NotFound);
 
-    public async Task EliminarAsync(Guid id)
-    {
-        var tenant = await _uow.Repository<Tenant>().GetFirstOrDefaultAsync(t => t.Uid == id);
-        if (tenant != null)
-        {
-            _uow.Repository<Tenant>().Remove(tenant);
-            await _uow.CommitAsync();
-        }
+        context.Tenants.Remove(tenant);
+        await context.SaveChangesAsync();
+        
+        return ApplicationResult.Success();
     }
 }

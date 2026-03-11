@@ -32,6 +32,7 @@ builder.Services.AddApiVersioning(options =>
 .AddMvc();
 
 builder.Services.AddMemoryCache();
+builder.Services.AddOutputCache();
 builder.Services.AddControllers();
 
 builder.Services.AddAntiforgery(options => 
@@ -71,7 +72,8 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        var frontendUrl = builder.Configuration["Config:FrontendUrl"] ?? "http://localhost:4200";
+        var appOptions = builder.Configuration.GetSection(MVP.Infrastructure.Configuration.AppOptions.SectionName).Get<MVP.Infrastructure.Configuration.AppOptions>();
+        var frontendUrl = appOptions?.FrontendUrl ?? "http://localhost:4200";
         policy.WithOrigins(frontendUrl)
               .AllowAnyHeader()
               .AllowAnyMethod()
@@ -98,6 +100,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors();
+app.UseOutputCache();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
@@ -147,7 +150,7 @@ app.Use(async (context, next) =>
 
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
-    Authorization = new[] { new MVP.WebAPI.Middleware.HangfireAuthorizationFilter() }
+    Authorization = new[] { new HangfireAuthorizationFilter() }
 });
 
 app.MapControllers();

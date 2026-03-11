@@ -4,16 +4,21 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Threading.Tasks;
+using MVP.Infrastructure.Configuration;
+
 namespace MVP.Infrastructure;
 
 public static class IdentityConfiguration
 {
     public static IServiceCollection AddInfrastructureSecurity(this IServiceCollection services, IConfiguration configuration)
     {
-        var secretKey = configuration["Config:SecretKey"];
+        var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() 
+            ?? throw new InvalidOperationException("La configuración JWT no fue encontrada.");
+
+        var secretKey = jwtOptions.SecretKey;
         if (string.IsNullOrEmpty(secretKey))
         {
-            throw new InvalidOperationException("La clave JWT secreta (Config:SecretKey) no está configurada en la infraestructura.");
+            throw new InvalidOperationException("La clave JWT secreta (Jwt:SecretKey) no está configurada.");
         }
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -25,8 +30,11 @@ public static class IdentityConfiguration
                 {
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-                    ValidateIssuer = false,
-                    ValidateAudience = false
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtOptions.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = jwtOptions.Audience,
+                    ValidateLifetime = true
                 };
                 options.Events = new JwtBearerEvents
                 {

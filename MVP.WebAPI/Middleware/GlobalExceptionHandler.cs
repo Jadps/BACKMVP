@@ -9,25 +9,22 @@ using System.Threading.Tasks;
 
 namespace MVP.WebAPI.Middleware;
 
-public class GlobalExceptionHandler : IExceptionHandler
+public class GlobalExceptionHandler(
+    ILogger<GlobalExceptionHandler> logger, 
+    Microsoft.AspNetCore.Hosting.IWebHostEnvironment env) : IExceptionHandler
 {
-    private readonly ILogger<GlobalExceptionHandler> _logger;
-
-    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
-    {
-        _logger = logger;
-    }
-
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
         Exception exception,
         CancellationToken cancellationToken)
     {
-        _logger.LogError(exception, "Ocurrió una excepción no controlada: {Message}", exception.Message);
+        logger.LogError(exception, "Ocurrió una excepción no controlada: {Message}", exception.Message);
 
+        var isDevelopment = env.IsDevelopment();
         var problemDetails = new ProblemDetails
         {
-            Instance = httpContext.Request.Path
+            Instance = httpContext.Request.Path,
+            Detail = isDevelopment ? exception.Message : "Ocurrió un error inesperado al procesar la solicitud."
         };
 
         if (exception is NotFoundException notFoundException)

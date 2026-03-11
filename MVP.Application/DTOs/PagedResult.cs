@@ -2,10 +2,4 @@ using System.Collections.Generic;
 
 namespace MVP.Application.DTOs;
 
-public class PagedResult<T>
-{
-    public List<T> Items { get; set; } = new List<T>();
-    public int TotalCount { get; set; }
-    public int PageNumber { get; set; }
-    public int PageSize { get; set; }
-}
+public record PagedResult<T>(List<T> Items, int TotalCount, int PageNumber, int PageSize);

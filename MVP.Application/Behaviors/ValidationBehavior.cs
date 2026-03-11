@@ -33,7 +33,8 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
 
             if (failures.Count != 0)
             {
-                throw new FluentValidation.ValidationException(failures);
+                var errorMessages = string.Join(" | ", failures.Select(f => f.ErrorMessage));
+                throw new MVP.Application.Exceptions.ValidationException(errorMessages);
             }
         }
 

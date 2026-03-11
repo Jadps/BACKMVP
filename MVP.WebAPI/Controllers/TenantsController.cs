@@ -7,51 +7,46 @@ using MVP.Application.DTOs;
 using MVP.Application.Interfaces;
 using MVP.Domain.Constants;
 
+using MVP.WebAPI.Extensions;
+
 namespace MVP.WebAPI.Controllers;
 
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
 [ApiController]
-public class TenantsController : ControllerBase
+public class TenantsController(ITenantService service) : ControllerBase
 {
-    private readonly ITenantService _service;
-
-    public TenantsController(ITenantService service)
-    {
-        _service = service;
-    }
-
     [HttpGet]
-    public async Task<ActionResult<List<TenantDTO>>> Get() => Ok(await _service.GetTodosAsync());
+    public async Task<ActionResult<List<TenantDTO>>> Get() => Ok(await service.GetTodosAsync());
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<TenantDTO>> GetById(Guid id)
+    public async Task<IActionResult> GetById(Guid id)
     {
-        var tenant = await _service.GetByIdAsync(id);
-        return tenant != null ? Ok(tenant) : NotFound();
+        var result = await service.GetByIdAsync(id);
+        return result.ToActionResult();
     }
 
     [HttpPost]
     [Authorize(Roles = AppRoles.GlobalAdmin)]
     public async Task<IActionResult> Post(TenantDTO dto)
     {
-        var id = await _service.CrearAsync(dto);
-        return Ok(new { Id = id });
+        var result = await service.CrearAsync(dto);
+        return result.ToActionResult();
     }
 
     [HttpPut]
     [Authorize(Roles = AppRoles.GlobalAdmin)]
     public async Task<IActionResult> Put(TenantDTO dto)
     {
-        await _service.ActualizarAsync(dto);
-        return Ok();
+        var result = await service.ActualizarAsync(dto);
+        return result.ToActionResult();
     }
 
     [HttpDelete("{id}")]
     [Authorize(Roles = AppRoles.GlobalAdmin)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await _service.EliminarAsync(id);
-        return NoContent();
+        var result = await service.EliminarAsync(id);
+        return result.ToActionResult();
     }
 }

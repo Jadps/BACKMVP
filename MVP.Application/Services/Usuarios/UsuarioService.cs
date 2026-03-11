@@ -1,6 +1,5 @@
 using AutoMapper;
 using MVP.Application.DTOs;
-using MVP.Application.Exceptions;
 using MVP.Application.Interfaces;
 using MVP.Application.Interfaces.Usuarios;
 using MVP.Domain.Entities;
@@ -9,161 +8,122 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MVP.Application.Services.Usuarios
+namespace MVP.Application.Services.Usuarios;
+
+public class UsuarioService(
+    IIdentityService identityService,
+    ICurrentTenantService currentTenantService,
+    IMapper mapper) : IUsuarioService
 {
-    public class UsuarioService : IUsuarioService
+    public async Task<List<UsuarioDTO>> GetTodosAsync()
     {
-        private readonly IIdentityService _identityService;
-        private readonly ICurrentTenantService _currentTenantService;
-        private readonly IMapper _mapper;
+        var usuarios = await identityService.GetUsuariosActivosAsync();
+        var todosLosRoles = await identityService.GetRolesActivosAsync();
+        var rolesPorId = todosLosRoles.ToDictionary(r => r.Id);
 
-        public UsuarioService(
-            IIdentityService identityService,
-            ICurrentTenantService currentTenantService,
-            IMapper mapper)
+        return usuarios.Select(user =>
         {
-            _identityService = identityService;
-            _currentTenantService = currentTenantService;
-            _mapper = mapper;
-        }
-
-        public async Task<List<UsuarioDTO>> GetTodosAsync()
-        {
-            var usuarios = await _identityService.GetUsuariosActivosAsync();
-            var todosLosRoles = await _identityService.GetRolesActivosAsync();
-            var rolesPorId = todosLosRoles.ToDictionary(r => r.Id);
-
-            return usuarios.Select(user =>
-            {
-                var dto = _mapper.Map<UsuarioDTO>(user);
-                dto.NombreCompleto = user.NombreCompleto;
-                dto.Roles = (user.RoleIds ?? new List<int>())
-                    .Where(id => rolesPorId.ContainsKey(id))
-                    .Select(id => _mapper.Map<RolDTO>(rolesPorId[id]))
-                    .ToList();
-                return dto;
-            }).ToList();
-        }
-
-        public async Task<PagedResult<UsuarioDTO>> GetPagedAsync(int pageNumber, int pageSize)
-        {
-            var result = await _identityService.GetUsuariosActivosPagedAsync(pageNumber, pageSize);
-            var todosLosRoles = await _identityService.GetRolesActivosAsync();
-            var rolesPorId = todosLosRoles.ToDictionary(r => r.Id);
-
-            var dtos = result.Items.Select(user =>
-            {
-                var dto = _mapper.Map<UsuarioDTO>(user);
-                dto.NombreCompleto = user.NombreCompleto;
-                dto.Roles = (user.RoleIds ?? new List<int>())
-                    .Where(id => rolesPorId.ContainsKey(id))
-                    .Select(id => _mapper.Map<RolDTO>(rolesPorId[id]))
-                    .ToList();
-                return dto;
-            }).ToList();
+            var dto = mapper.Map<UsuarioDTO>(user);
+            var roles = (user.RoleIds ?? new List<int>())
+                .Where(id => rolesPorId.ContainsKey(id))
+                .Select(id => mapper.Map<RolDTO>(rolesPorId[id]))
+                .ToList();
             
-            return new PagedResult<UsuarioDTO>
-            {
-                Items = dtos,
-                TotalCount = result.TotalCount,
-                PageNumber = pageNumber,
-                PageSize = pageSize
-            };
-        }
+            return dto with { NombreCompleto = user.NombreCompleto, Roles = roles };
+        }).ToList();
+    }
 
-        public async Task<UsuarioDTO?> GetByIdAsync(Guid id)
+    public async Task<PagedResult<UsuarioDTO>> GetPagedAsync(int pageNumber, int pageSize)
+    {
+        var result = await identityService.GetUsuariosActivosPagedAsync(pageNumber, pageSize);
+        var todosLosRoles = await identityService.GetRolesActivosAsync();
+        var rolesPorId = todosLosRoles.ToDictionary(r => r.Id);
+
+        var dtos = result.Items.Select(user =>
         {
-            if (id == Guid.Empty) return null;
-
-            var user = await _identityService.GetUsuarioActivoByUidAsync(id);
+            var dto = mapper.Map<UsuarioDTO>(user);
+            var roles = (user.RoleIds ?? new List<int>())
+                .Where(id => rolesPorId.ContainsKey(id))
+                .Select(id => mapper.Map<RolDTO>(rolesPorId[id]))
+                .ToList();
             
-            if (user == null) 
-            {
-                throw new NotFoundException("El usuario solicitado no fue encontrado.");
-            }
+            return dto with { NombreCompleto = user.NombreCompleto, Roles = roles };
+        }).ToList();
+        
+        return new PagedResult<UsuarioDTO>(dtos, result.TotalCount, pageNumber, pageSize);
+    }
 
-            var roles = await _identityService.GetRolesByIdsAsync(user.RoleIds ?? new List<int>());
+    public async Task<ApplicationResult<UsuarioDTO>> GetByIdAsync(Guid id)
+    {
+        if (id == Guid.Empty) 
+            return ApplicationResult<UsuarioDTO>.Failure("Id de usuario no válido.", ErrorType.Validation);
 
-            var dto = _mapper.Map<UsuarioDTO>(user);
-            dto.Roles = roles.Select(r => _mapper.Map<RolDTO>(r)).ToList();
+        var user = await identityService.GetUsuarioActivoByUidAsync(id);
+        
+        if (user == null) 
+            return ApplicationResult<UsuarioDTO>.Failure("El usuario solicitado no fue encontrado.", ErrorType.NotFound);
 
-            return dto;
-        }
+        var roles = await identityService.GetRolesByIdsAsync(user.RoleIds ?? new List<int>());
+        var dto = mapper.Map<UsuarioDTO>(user);
+        var rolesDto = roles.Select(r => mapper.Map<RolDTO>(r)).ToList();
 
-        public async Task<UsuarioDTO?> GetPerfilActualAsync()
+        return ApplicationResult<UsuarioDTO>.Success(dto with { Roles = rolesDto });
+    }
+
+    public async Task<ApplicationResult<UsuarioDTO>> GetPerfilActualAsync()
+    {
+        var userIdStr = currentTenantService.UserId;
+        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+            return ApplicationResult<UsuarioDTO>.Failure("No se pudo identificar el perfil actual.", ErrorType.Unauthorized);
+
+        return await GetByIdAsync(userId);
+    }
+
+    public async Task<ApplicationResult> CrearAsync(UsuarioDTO dto)
+    {
+        var usuario = mapper.Map<Usuario>(dto);
+        usuario.UserName = dto.Email;
+        
+        if (!currentTenantService.IsSuperAdmin)
         {
-            var userIdStr = _currentTenantService.UserId;
-            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
-                return null;
-
-            return await GetByIdAsync(userId);
+            var currentTenantId = currentTenantService.TenantId;
+            if (currentTenantId.HasValue)
+                usuario.TenantId = currentTenantId.Value;
         }
+        
+        var nombresRolesNuevos = await ObtenerNombresRolesAsync(dto.Roles);
+        return await identityService.CrearUsuarioAsync(usuario, dto.Password!, nombresRolesNuevos);
+    }
 
-        public async Task<ApplicationResult> CrearAsync(UsuarioDTO dto)
-        {
-            var usuario = _mapper.Map<Usuario>(dto);
-            usuario.UserName = dto.Email;
-            
-            if (!_currentTenantService.IsSuperAdmin)
-            {
-                var currentTenantId = _currentTenantService.TenantId;
-                if (currentTenantId.HasValue)
-                {
-                    usuario.TenantId = currentTenantId.Value;
-                }
-            }
-            
-            var nombresRolesNuevos = await ObtenerNombresRolesAsync(dto.Roles);
-            
-            return await _identityService.CrearUsuarioAsync(usuario, dto.Password!, nombresRolesNuevos);
-        }
+    public async Task<ApplicationResult> ActualizarAsync(UsuarioDTO dto)
+    {
+        if (dto.Id == null)
+            return ApplicationResult.Failure("El identificador del usuario proporcionado es nulo.", ErrorType.Validation);
 
-        public async Task<ApplicationResult> ActualizarAsync(UsuarioDTO dto)
-        {
-            if (dto.Id == null)
-                throw new ValidationException("El identificador del usuario proporcionado es nulo.");
+        var user = await identityService.GetUsuarioActivoByUidAsync(dto.Id.Value);
+        if (user == null)
+            return ApplicationResult.Failure("El usuario que intentas actualizar no existe.", ErrorType.NotFound);
 
-            var user = await _identityService.GetUsuarioActivoByUidAsync(dto.Id.Value);
+        mapper.Map(dto, user);
+        var nombresRolesNuevos = await ObtenerNombresRolesAsync(dto.Roles);
+        return await identityService.ActualizarUsuarioAsync(user, nombresRolesNuevos);
+    }
 
-            if (user == null)
-            {
-                throw new NotFoundException("El usuario que intentas actualizar no existe.");
-            }
+    public async Task<ApplicationResult> BorrarAsync(Guid id)
+    {
+        return await identityService.BorrarUsuarioAsync(id);
+    }
 
-            _mapper.Map(dto, user);
-            
-            var nombresRolesNuevos = await ObtenerNombresRolesAsync(dto.Roles);
+    private async Task<List<string>> ObtenerNombresRolesAsync(List<RolDTO> rolesDto)
+    {
+        var roleUidsToFind = rolesDto
+            .Where(r => r.Id.HasValue)
+            .Select(r => r.Id!.Value)
+            .ToList();
 
-            return await _identityService.ActualizarUsuarioAsync(user, nombresRolesNuevos);
-        }
+        if (!roleUidsToFind.Any()) return new List<string>();
 
-        public async Task<bool> BorrarAsync(Guid id)
-        {
-            var success = await _identityService.BorrarUsuarioAsync(id);
-            
-            if (!success)
-            {
-                throw new NotFoundException("El usuario especificado para borrar no fue encontrado.");
-            }
-
-            return true;
-        }
-
-        private async Task<List<string>> ObtenerNombresRolesAsync(List<RolDTO> rolesDto)
-        {
-            var roleUidsToFind = new List<Guid>();
-            foreach (var roleDto in rolesDto)
-            {
-                if (roleDto.Id.HasValue)
-                {
-                    roleUidsToFind.Add(roleDto.Id.Value);
-                }
-            }
-
-            if (!roleUidsToFind.Any()) return new List<string>();
-
-            var rolesDb = await _identityService.GetRolesByUidsAsync(roleUidsToFind);
-            return rolesDb.Select(r => r.Name!).Where(n => !string.IsNullOrEmpty(n)).ToList();
-        }
+        var rolesDb = await identityService.GetRolesByUidsAsync(roleUidsToFind);
+        return rolesDb.Select(r => r.Name!).Where(n => !string.IsNullOrEmpty(n)).ToList();
     }
 }

@@ -12,26 +12,19 @@ namespace MVP.WebAPI.Controllers;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
 [ApiController]
-public class AuthController : ControllerBase
+public class AuthController(IAuthService authService) : ControllerBase
 {
-    private readonly IAuthService _authService;
-
-    public AuthController(IAuthService authService)
-    {
-        _authService = authService;
-    }
-
     [AllowAnonymous]
     [EnableRateLimiting("StrictPolicy")]
     [HttpPost("login")]
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> Login([FromBody] LoginDTO model)
     {
-        var result = await _authService.LoginAsync(model);
+        var result = await authService.LoginAsync(model);
 
-        if (result.Succeeded)
+        if (result.IsSuccess)
         {
-            var authResponse = result.Value;
+            var authResponse = result.Data;
 
             Response.AppendSecureCookie("AccessToken", authResponse.AccessToken!, authResponse!.Expiration);
             Response.AppendSecureCookie("RefreshToken", authResponse.RefreshToken!, DateTime.UtcNow.AddDays(7));
@@ -50,9 +43,9 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Logout()
     {
         var userEmail = User.Identity?.Name;
-        var result = await _authService.LogoutAsync(userEmail);
+        var result = await authService.LogoutAsync(userEmail);
 
-        if (result.Succeeded)
+        if (result.IsSuccess)
         {
             Response.DeleteSecureCookie("AccessToken");
             Response.DeleteSecureCookie("RefreshToken");
@@ -74,12 +67,12 @@ public class AuthController : ControllerBase
         if (string.IsNullOrEmpty(refreshToken))
             return Unauthorized(new { message = "No se encontró el token de refresco en las cookies." });
 
-        var model = new RefreshTokenRequestDTO { RefreshToken = refreshToken };
-        var result = await _authService.RefreshTokenAsync(model);
+        var model = new RefreshTokenRequestDTO(refreshToken);
+        var result = await authService.RefreshTokenAsync(model);
         
-        if (result.Succeeded)
+        if (result.IsSuccess)
         {
-            var authResponse = result.Value;
+            var authResponse = result.Data;
             
             Response.AppendSecureCookie("AccessToken", authResponse.AccessToken!, authResponse!.Expiration);
             Response.AppendSecureCookie("RefreshToken", authResponse.RefreshToken!, DateTime.UtcNow.AddDays(7));
@@ -96,9 +89,9 @@ public class AuthController : ControllerBase
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO model)
     {
-        var result = await _authService.ForgotPasswordAsync(model);
+        var result = await authService.ForgotPasswordAsync(model);
         
-        if (result.Succeeded)
+        if (result.IsSuccess)
         {
             return Ok(new { message = "Si el correo está registrado, hemos enviado las instrucciones para restablecer tu contraseña." });
         }
@@ -112,9 +105,9 @@ public class AuthController : ControllerBase
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO model)
     {
-        var result = await _authService.ResetPasswordAsync(model);
+        var result = await authService.ResetPasswordAsync(model);
         
-        if (result.Succeeded)
+        if (result.IsSuccess)
         {
             return Ok(new { message = "La contraseña ha sido restablecida exitosamente." });
         }

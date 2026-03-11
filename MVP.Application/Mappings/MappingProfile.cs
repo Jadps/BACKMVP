@@ -33,5 +33,18 @@ public class MappingProfile : Profile
         CreateMap<TenantDTO, Tenant>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.Uid, opt => opt.MapFrom(src => src.Id));
+
+        CreateMap<OnboardingRequestDTO, Tenant>()
+            .ForMember(dest => dest.Nombre, opt => opt.MapFrom(src => src.EmpresaNombre))
+            .ForMember(dest => dest.Dominio, opt => opt.MapFrom(src => src.Dominio))
+            .ForMember(dest => dest.FechaCreacion, opt => opt.MapFrom(_ => DateTime.UtcNow));
+
+        CreateMap<OnboardingRequestDTO, Usuario>()
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.AdminEmail))
+            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.AdminEmail))
+            .ForMember(dest => dest.Nombre, opt => opt.MapFrom(src => src.AdminNombre))
+            .ForMember(dest => dest.PrimerApellido, opt => opt.MapFrom(src => src.AdminPrimerApellido))
+            .ForMember(dest => dest.SegundoApellido, opt => opt.MapFrom(src => src.AdminSegundoApellido))
+            .ForMember(dest => dest.FriendlyName, opt => opt.MapFrom(src => src.AdminNombre));
     }
 }

@@ -9,8 +9,12 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
 
+using Microsoft.EntityFrameworkCore.Storage;
+using MVP.Application.Interfaces;
+using MVP.Domain.Interfaces;
+
 namespace MVP.Infrastructure.Persistence;
-public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, int>
+public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, int>, IApplicationDbContext
 {
     private readonly int? _tenantId;
     private readonly string? _userId;
@@ -29,12 +33,30 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<Archivo> Archivos => Set<Archivo>();
     public DbSet<Documento> Documentos => Set<Documento>();
 
+    public async Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        return await Database.BeginTransactionAsync(cancellationToken);
+    }
+
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        ApplySoftDelete();
         var auditEntries = OnBeforeSaveChanges();
         var result = await base.SaveChangesAsync(cancellationToken);
         await OnAfterSaveChanges(auditEntries);
         return result;
+    }
+
+    private void ApplySoftDelete()
+    {
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.State == EntityState.Deleted && entry.Entity is ISoftDelete softDelete)
+            {
+                entry.State = EntityState.Modified;
+                softDelete.Borrado = true;
+            }
+        }
     }
 
     private List<AuditEntry> OnBeforeSaveChanges()

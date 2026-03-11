@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using System.Threading;
 
 using Microsoft.EntityFrameworkCore.Storage;
-using MVP.Application.Interfaces;
 using MVP.Domain.Interfaces;
 
 namespace MVP.Infrastructure.Persistence;

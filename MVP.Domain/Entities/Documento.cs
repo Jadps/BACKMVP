@@ -26,7 +26,7 @@ public class Documento : ISoftDelete
     public EstadoValidacion EstadoValidacion { get; set; } = EstadoValidacion.Pendiente;
     public string? ObservacionesRechazo { get; set; }
 
-    public int TenantId { get; set; }
+    public int? TenantId { get; set; }
     public virtual Tenant? Tenant { get; set; }
     
     public bool Borrado { get; set; } = false;

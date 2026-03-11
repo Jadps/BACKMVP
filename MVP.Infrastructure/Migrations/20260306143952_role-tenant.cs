@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MVP.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class roletenant : Migration
+    public partial class roleTenant : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

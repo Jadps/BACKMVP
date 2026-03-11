@@ -22,10 +22,8 @@ public class AuthController(IAuthService authService) : ControllerBase
     {
         var result = await authService.LoginAsync(model);
 
-        if (result.IsSuccess)
+        if (result.IsSuccess && result.Data is { } authResponse)
         {
-            var authResponse = result.Data;
-
             Response.AppendSecureCookie("AccessToken", authResponse.AccessToken!, authResponse!.Expiration);
             Response.AppendSecureCookie("RefreshToken", authResponse.RefreshToken!, DateTime.UtcNow.AddDays(7));
 
@@ -69,11 +67,9 @@ public class AuthController(IAuthService authService) : ControllerBase
 
         var model = new RefreshTokenRequestDTO(refreshToken);
         var result = await authService.RefreshTokenAsync(model);
-        
-        if (result.IsSuccess)
+
+        if (result.IsSuccess && result.Data is { } authResponse)
         {
-            var authResponse = result.Data;
-            
             Response.AppendSecureCookie("AccessToken", authResponse.AccessToken!, authResponse!.Expiration);
             Response.AppendSecureCookie("RefreshToken", authResponse.RefreshToken!, DateTime.UtcNow.AddDays(7));
 

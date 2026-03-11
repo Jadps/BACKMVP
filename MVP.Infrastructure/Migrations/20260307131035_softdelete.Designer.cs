@@ -13,7 +13,7 @@ namespace MVP.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20260307131035_softdelete")]
-    partial class softdelete
+    partial class softDelete
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -18,7 +18,7 @@ public class Archivo : ISoftDelete
     public string EntidadTipo { get; set; } = string.Empty;
     public string EntidadId { get; set; } = string.Empty;
 
-    public int TenantId { get; set; }
+    public int? TenantId { get; set; }
     public virtual Tenant? Tenant { get; set; }
     
     public bool Borrado { get; set; } = false;

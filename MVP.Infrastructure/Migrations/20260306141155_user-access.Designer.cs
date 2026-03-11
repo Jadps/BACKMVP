@@ -13,7 +13,7 @@ namespace MVP.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20260306141155_user-access")]
-    partial class useraccess
+    partial class userAccess
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

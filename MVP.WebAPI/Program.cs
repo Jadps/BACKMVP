@@ -13,7 +13,6 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using Hangfire;
-using Hangfire;
 using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);

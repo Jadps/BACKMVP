@@ -13,7 +13,7 @@ namespace MVP.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20260306143952_role-tenant")]
-    partial class roletenant
+    partial class roleTenant
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

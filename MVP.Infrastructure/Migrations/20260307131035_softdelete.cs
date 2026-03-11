@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MVP.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class softdelete : Migration
+    public partial class softDelete : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

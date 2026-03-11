@@ -30,23 +30,16 @@ namespace MVP.Application.Services.Usuarios
         public async Task<List<UsuarioDTO>> GetTodosAsync()
         {
             var usuarios = await _identityService.GetUsuariosActivosAsync();
-
-            var roleIds = usuarios
-                .SelectMany(u => u.UserRoles)
-                .Select(ur => ur.RoleId)
-                .Distinct()
-                .ToList();
-
-            var roles = await _identityService.GetRolesByIdsAsync(roleIds);
-            var rolesPorId = roles.ToDictionary(r => r.Id);
+            var todosLosRoles = await _identityService.GetRolesActivosAsync();
+            var rolesPorId = todosLosRoles.ToDictionary(r => r.Id);
 
             return usuarios.Select(user =>
             {
                 var dto = _mapper.Map<UsuarioDTO>(user);
                 dto.NombreCompleto = user.NombreCompleto;
-                dto.Roles = user.UserRoles
-                    .Where(ur => rolesPorId.ContainsKey(ur.RoleId))
-                    .Select(ur => _mapper.Map<RolDTO>(rolesPorId[ur.RoleId]))
+                dto.Roles = (user.RoleIds ?? new List<int>())
+                    .Where(id => rolesPorId.ContainsKey(id))
+                    .Select(id => _mapper.Map<RolDTO>(rolesPorId[id]))
                     .ToList();
                 return dto;
             }).ToList();
@@ -55,23 +48,16 @@ namespace MVP.Application.Services.Usuarios
         public async Task<PagedResult<UsuarioDTO>> GetPagedAsync(int pageNumber, int pageSize)
         {
             var result = await _identityService.GetUsuariosActivosPagedAsync(pageNumber, pageSize);
-
-            var roleIds = result.Items
-                .SelectMany(u => u.UserRoles)
-                .Select(ur => ur.RoleId)
-                .Distinct()
-                .ToList();
-
-            var roles = await _identityService.GetRolesByIdsAsync(roleIds);
-            var rolesPorId = roles.ToDictionary(r => r.Id);
+            var todosLosRoles = await _identityService.GetRolesActivosAsync();
+            var rolesPorId = todosLosRoles.ToDictionary(r => r.Id);
 
             var dtos = result.Items.Select(user =>
             {
                 var dto = _mapper.Map<UsuarioDTO>(user);
                 dto.NombreCompleto = user.NombreCompleto;
-                dto.Roles = user.UserRoles
-                    .Where(ur => rolesPorId.ContainsKey(ur.RoleId))
-                    .Select(ur => _mapper.Map<RolDTO>(rolesPorId[ur.RoleId]))
+                dto.Roles = (user.RoleIds ?? new List<int>())
+                    .Where(id => rolesPorId.ContainsKey(id))
+                    .Select(id => _mapper.Map<RolDTO>(rolesPorId[id]))
                     .ToList();
                 return dto;
             }).ToList();
@@ -96,8 +82,7 @@ namespace MVP.Application.Services.Usuarios
                 throw new NotFoundException("El usuario solicitado no fue encontrado.");
             }
 
-            var roleIds = user.UserRoles.Select(ur => ur.RoleId).ToList();
-            var roles = await _identityService.GetRolesByIdsAsync(roleIds);
+            var roles = await _identityService.GetRolesByIdsAsync(user.RoleIds ?? new List<int>());
 
             var dto = _mapper.Map<UsuarioDTO>(user);
             dto.Roles = roles.Select(r => _mapper.Map<RolDTO>(r)).ToList();

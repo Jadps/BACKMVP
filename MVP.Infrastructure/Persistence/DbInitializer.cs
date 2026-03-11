@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using MVP.Domain.Entities;
+using MVP.Infrastructure.Identity;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,8 +24,8 @@ public static class DbInitializer
                 await context.Database.MigrateAsync();
             }
 
-            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Usuario>>();
-            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Rol>>();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
             
             await SeedAsync(userManager, roleManager, context);
         }
@@ -34,7 +35,7 @@ public static class DbInitializer
         }
     }
 
-    private static async Task SeedAsync(UserManager<Usuario> userManager, RoleManager<Rol> roleManager, ApplicationDbContext context)
+    private static async Task SeedAsync(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, ApplicationDbContext context)
     {        
         var tenant = await context.Tenants.FirstOrDefaultAsync(t => t.Nombre == "Empresa Principal");
         if (tenant == null)
@@ -52,18 +53,18 @@ public static class DbInitializer
 
         if (await roleManager.FindByNameAsync("Admin") == null)
         {
-            await roleManager.CreateAsync(new Rol 
+            await roleManager.CreateAsync(new ApplicationRole 
             { 
                 Name = "Admin", 
-                NormalizedName = "ADMIN", 
                 TenantId = null, 
                 Uid = Guid.NewGuid(),
                 Borrado = false
             });
         }
+
         if (await userManager.FindByEmailAsync("jadp.xs@gmail.com") == null)
         {
-            var user = new Usuario
+            var appUser = new ApplicationUser
             {
                 UserName = "jadp.xs@gmail.com",
                 Email = "jadp.xs@gmail.com",
@@ -77,10 +78,10 @@ public static class DbInitializer
                 CatStatusAccountId = 1
             };
 
-            var result = await userManager.CreateAsync(user, "Sgedi.2024!");
+            var result = await userManager.CreateAsync(appUser, "Sgedi.2024!");
             if (result.Succeeded)
             {
-                await userManager.AddToRoleAsync(user, "Admin");
+                await userManager.AddToRoleAsync(appUser, "Admin");
             }
             else
             {

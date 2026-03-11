@@ -1,12 +1,11 @@
-using MVP.Domain.Interfaces;
+using Microsoft.AspNetCore.Identity;
+using MVP.Domain.Entities;
 
-namespace MVP.Domain.Entities;
+namespace MVP.Infrastructure.Identity;
 
-public class Rol : ISoftDelete
+public class ApplicationRole : IdentityRole<int>
 {
-    public int Id { get; set; }
     public Guid Uid { get; set; } = Guid.NewGuid();
-    public string? Name { get; set; }
     public string? Descripcion { get; set; }
     public bool Borrado { get; set; }
     public int? TenantId { get; set; }

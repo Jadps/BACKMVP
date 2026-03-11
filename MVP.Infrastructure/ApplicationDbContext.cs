@@ -3,13 +3,14 @@ using Microsoft.EntityFrameworkCore;
 using MVP.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using MVP.Application.Interfaces;
+using MVP.Infrastructure.Identity;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
 
 namespace MVP.Infrastructure.Persistence;
-public class ApplicationDbContext : IdentityDbContext<Usuario, Rol, int>
+public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, int>
 {
     private readonly int? _tenantId;
     private readonly string? _userId;
@@ -147,11 +148,11 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
               .HasForeignKey(rm => rm.ModuloId);
     });
 
-    modelBuilder.Entity<Usuario>(entity => {
+    modelBuilder.Entity<ApplicationUser>(entity => {
         entity.ToTable("Usuarios");
         
         entity.HasOne(u => u.Tenant)
-              .WithMany(t => t.Usuarios)
+              .WithMany()
               .HasForeignKey(u => u.TenantId)
               .OnDelete(DeleteBehavior.Restrict);
 
@@ -169,10 +170,10 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
         entity.HasQueryFilter(t => !t.Borrado && (_tenantId == null || t.Id == _tenantId));
     });
     
-    modelBuilder.Entity<Rol>(entity => {
+    modelBuilder.Entity<ApplicationRole>(entity => {
         entity.ToTable("Roles");
         entity.HasOne(r => r.Tenant)
-              .WithMany(t => t.Roles)
+              .WithMany()
               .HasForeignKey(r => r.TenantId)
               .OnDelete(DeleteBehavior.Restrict);
 

@@ -13,7 +13,6 @@ public class MappingProfile : Profile
         CreateMap<UsuarioDTO, Usuario>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.Uid, opt => opt.MapFrom(src => src.Id))
-            .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
             .ForMember(dest => dest.TenantId, opt => opt.MapFrom(src => src.TenantId));
 
         CreateMap<Rol, RolDTO>()

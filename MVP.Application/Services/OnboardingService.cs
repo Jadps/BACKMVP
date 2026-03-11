@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Identity;
 using MVP.Application.DTOs;
 using MVP.Application.Interfaces;
 using MVP.Domain.Constants;
@@ -13,14 +12,12 @@ namespace MVP.Application.Services;
 public class OnboardingService : IOnboardingService
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly UserManager<Usuario> _userManager;
-    private readonly RoleManager<Rol> _roleManager;
+    private readonly IIdentityService _identityService;
 
-    public OnboardingService(IUnitOfWork unitOfWork, UserManager<Usuario> userManager, RoleManager<Rol> roleManager)
+    public OnboardingService(IUnitOfWork unitOfWork, IIdentityService identityService)
     {
         _unitOfWork = unitOfWork;
-        _userManager = userManager;
-        _roleManager = roleManager;
+        _identityService = identityService;
     }
 
     public async Task<ApplicationResult> RegistrarNuevoTenantAsync(OnboardingRequestDTO request)
@@ -28,9 +25,12 @@ public class OnboardingService : IOnboardingService
         await _unitOfWork.BeginTransactionAsync();
         try
         {
-            if (!await _roleManager.RoleExistsAsync(AppRoles.TenantAdmin))
+            if (!await _identityService.RolExisteAsync(AppRoles.TenantAdmin))
             {
-                await _roleManager.CreateAsync(new Rol { Name = AppRoles.TenantAdmin, NormalizedName = AppRoles.TenantAdmin.ToUpper() });
+                await _identityService.CrearRolAsync(new Rol 
+                { 
+                    Name = AppRoles.TenantAdmin 
+                });
             }
 
             var tenant = new Tenant
@@ -54,22 +54,11 @@ public class OnboardingService : IOnboardingService
                 TenantId = tenant.Id
             };
 
-            var userResult = await _userManager.CreateAsync(adminUser, request.AdminPassword);
+            var userResult = await _identityService.CrearUsuarioAsync(adminUser, request.AdminPassword, new List<string> { AppRoles.TenantAdmin });
             if (!userResult.Succeeded)
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                var errors = new List<string>();
-                foreach (var err in userResult.Errors) errors.Add(err.Description);
-                return ApplicationResult.Failure(errors);
-            }
-
-            var roleResult = await _userManager.AddToRoleAsync(adminUser, AppRoles.TenantAdmin);
-            if (!roleResult.Succeeded)
-            {
-                await _unitOfWork.RollbackTransactionAsync();
-                var errors = new List<string>();
-                foreach (var err in roleResult.Errors) errors.Add(err.Description);
-                return ApplicationResult.Failure(errors);
+                return userResult;
             }
 
             await _unitOfWork.CommitTransactionAsync();

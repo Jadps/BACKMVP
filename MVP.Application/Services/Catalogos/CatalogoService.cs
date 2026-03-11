@@ -1,6 +1,6 @@
 using AutoMapper;
-using Microsoft.AspNetCore.Identity;
 using MVP.Application.DTOs;
+using MVP.Application.Interfaces;
 using MVP.Application.Interfaces.Catalogos;
 using MVP.Domain.Entities;
 using MVP.Domain.Interfaces;
@@ -8,14 +8,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
 using Microsoft.Extensions.Caching.Memory;
 
 namespace MVP.Application.Services.Catalogos
 {
     public class CatalogoService : ICatalogoService
     {
-        private readonly RoleManager<Rol> _roleManager;
+        private readonly IIdentityService _identityService;
         private readonly IMapper _mapper;
         private readonly IRepository<Modulo> _moduloRepository;
         private readonly IMemoryCache _cache;
@@ -23,12 +22,12 @@ namespace MVP.Application.Services.Catalogos
         private const string ModulosCacheKey = "modulos_cache";
 
         public CatalogoService(
-            RoleManager<Rol> roleManager, 
+            IIdentityService identityService,
             IMapper mapper, 
             IRepository<Modulo> moduloRepository,
             IMemoryCache cache)
         {
-            _roleManager = roleManager;
+            _identityService = identityService;
             _mapper = mapper;
             _moduloRepository = moduloRepository;
             _cache = cache;
@@ -38,9 +37,8 @@ namespace MVP.Application.Services.Catalogos
         {
             if (!_cache.TryGetValue(RolesCacheKey, out List<RolDTO>? cachedRoles) || cachedRoles == null)
             {
-                var roles = await Task.Run(() => _roleManager.Roles.Where(r => !r.Borrado).ToList());
+                var roles = await _identityService.GetRolesActivosAsync();
                 cachedRoles = _mapper.Map<List<RolDTO>>(roles);
-                
                 _cache.Set(RolesCacheKey, cachedRoles, TimeSpan.FromHours(1));
             }
             return cachedRoles;
@@ -55,14 +53,11 @@ namespace MVP.Application.Services.Catalogos
                 Borrado = false
             };
 
-            var result = await _roleManager.CreateAsync(rol);
-            
+            var result = await _identityService.CrearRolAsync(rol);
             if (!result.Succeeded)
             {
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                throw new Exception($"Error al crear el rol: {errors}");
+                throw new Exception(string.Join(", ", result.Errors));
             }
-            
             _cache.Remove(RolesCacheKey);
         }
 
@@ -84,3 +79,4 @@ namespace MVP.Application.Services.Catalogos
         }
     }
 }
+

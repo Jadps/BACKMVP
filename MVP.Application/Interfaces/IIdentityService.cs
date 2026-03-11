@@ -14,4 +14,7 @@ public interface IIdentityService
     Task<bool> BorrarUsuarioAsync(Guid uid);
     Task<List<Rol>> GetRolesByIdsAsync(IEnumerable<int> roleIds);
     Task<List<Rol>> GetRolesByUidsAsync(IEnumerable<Guid> roleUids);
+    Task<List<Rol>> GetRolesActivosAsync();
+    Task<ApplicationResult> CrearRolAsync(Rol rol);
+    Task<bool> RolExisteAsync(string rolNombre);
 }

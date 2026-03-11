@@ -12,16 +12,17 @@ using Microsoft.IdentityModel.Tokens;
 using MVP.Application.DTOs;
 using MVP.Application.Interfaces;
 using MVP.Domain.Entities;
+using MVP.Infrastructure.Identity;
 
 namespace MVP.Infrastructure.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly UserManager<Usuario> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly IConfiguration _configuration;
     private readonly IEmailService _emailService;
 
-    public AuthService(UserManager<Usuario> userManager, IConfiguration configuration, IEmailService emailService)
+    public AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration, IEmailService emailService)
     {
         _userManager = userManager;
         _configuration = configuration;
@@ -113,7 +114,7 @@ public class AuthService : IAuthService
         return ApplicationResult.Success();
     }
 
-    private async Task<AuthResponseDTO> GenerarYAsignarTokensAsync(Usuario user)
+    private async Task<AuthResponseDTO> GenerarYAsignarTokensAsync(ApplicationUser user)
     {
         var userRoles = await _userManager.GetRolesAsync(user);
 

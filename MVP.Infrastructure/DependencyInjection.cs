@@ -1,11 +1,13 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 using MVP.Infrastructure.Persistence;
 using MVP.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Hangfire;
 using Hangfire.PostgreSql;
+using MVP.Infrastructure.Identity;
 
 namespace MVP.Infrastructure;
 
@@ -17,11 +19,13 @@ public static class DependencyInjection
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"),
                 b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
 
+        services.AddAutoMapper(cfg => {}, Assembly.GetExecutingAssembly());
 
-        services.AddIdentityCore<Usuario>(options => {
+
+        services.AddIdentityCore<ApplicationUser>(options => {
             options.Password.RequireDigit = false;
         })
-        .AddRoles<Rol>()
+        .AddRoles<ApplicationRole>()
         .AddEntityFrameworkStores<ApplicationDbContext>();
 
 

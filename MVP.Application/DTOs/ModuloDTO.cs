@@ -7,7 +7,7 @@ public record ModuloDTO(
     Guid? Id,
     string Nombre,
     string? Icono,
-    string? Url,
+    string? Accion,
     int Orden,
     Guid? PadreId,
     List<ModuloDTO> SubModulos);

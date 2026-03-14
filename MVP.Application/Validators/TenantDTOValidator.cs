@@ -3,16 +3,16 @@ using MVP.Application.DTOs;
 
 namespace MVP.Application.Validators;
 
-public class TenantDTOValidator : AbstractValidator<TenantDTO>
+public class TenantDtoValidator : AbstractValidator<TenantDto>
 {
-    public TenantDTOValidator()
+    public TenantDtoValidator()
     {
-        RuleFor(x => x.Nombre)
-            .NotEmpty().WithMessage("El nombre del tenant es obligatorio.")
-            .MaximumLength(200).WithMessage("El nombre del tenant no puede exceder los 200 caracteres.");
+        RuleFor(x => x.Name)
+            .NotEmpty().WithMessage("Tenant name is required.")
+            .MaximumLength(200).WithMessage("Tenant name cannot exceed 200 characters.");
 
-        RuleFor(x => x.Dominio)
-            .NotEmpty().WithMessage("El dominio del tenant es obligatorio.")
-            .MaximumLength(100).WithMessage("El dominio no puede exceder los 100 caracteres.");
+        RuleFor(x => x.Domain)
+            .NotEmpty().WithMessage("Tenant domain is required.")
+            .MaximumLength(100).WithMessage("Domain cannot exceed 100 characters.");
     }
 }

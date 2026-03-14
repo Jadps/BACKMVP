@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
@@ -13,12 +14,14 @@ public static class IdentityConfiguration
     public static IServiceCollection AddInfrastructureSecurity(this IServiceCollection services, IConfiguration configuration)
     {
         var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() 
-            ?? throw new InvalidOperationException("La configuración JWT no fue encontrada.");
+            ?? throw new InvalidOperationException("JWT configuration not found.");
+
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
 
         var secretKey = jwtOptions.SecretKey;
         if (string.IsNullOrEmpty(secretKey))
         {
-            throw new InvalidOperationException("La clave JWT secreta (Jwt:SecretKey) no está configurada.");
+            throw new InvalidOperationException("JWT Secret Key (Jwt:SecretKey) is not configured.");
         }
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

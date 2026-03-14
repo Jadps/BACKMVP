@@ -7,23 +7,17 @@ using MVP.Application.Interfaces.Catalogos;
 
 namespace MVP.Infrastructure.Services.Catalogos;
 
-public class GenericCatalogService : IGenericCatalogService
+public class GenericCatalogService(IEnumerable<ICatalogProvider> providers) : IGenericCatalogService
 {
-    private readonly IEnumerable<ICatalogoProvider> _providers;
+    private readonly IEnumerable<ICatalogProvider> _providers = providers;
 
-    public GenericCatalogService(IEnumerable<ICatalogoProvider> providers)
+    public async Task<List<CatalogItemDto>> GetCatalogAsync(string catalogName)
     {
-        _providers = providers;
-    }
-
-    public async Task<List<CatalogoItemDTO>> GetCatalogoAsync(string nombreCatalogo)
-    {
-        var provider = _providers.FirstOrDefault(p => p.Nombre.Equals(nombreCatalogo, StringComparison.OrdinalIgnoreCase));
+        var provider = _providers.FirstOrDefault(p => p.Name.Equals(catalogName, StringComparison.OrdinalIgnoreCase));
 
         if (provider == null)
-            throw new Exception($"El catálogo '{nombreCatalogo}' no fue encontrado.");
+            throw new Exception($"Catalog '{catalogName}' not found.");
 
-        return await provider.ObtenerItemsAsync();
+        return await provider.GetItemsAsync();
     }
 }
-

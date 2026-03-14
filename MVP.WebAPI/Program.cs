@@ -8,13 +8,14 @@ using MVP.Infrastructure.Persistence;
 using MVP.WebAPI.Middleware;
 using Microsoft.AspNetCore.Authorization;
 using Scalar.AspNetCore;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using Hangfire;
-using FluentValidation;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using FluentValidation;
 
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
@@ -24,6 +25,8 @@ builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
 builder.Services.AddOpenApi();
+
+builder.Services.AddHealthChecks();
 
 builder.Services.AddApiVersioning(options =>
 {
@@ -158,7 +161,7 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 
 app.MapControllers();
 
-app.MapHealthChecks("/api/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+app.MapHealthChecks("/api/health", new HealthCheckOptions
 {
     ResponseWriter = async (context, report) =>
     {

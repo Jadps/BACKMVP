@@ -3,38 +3,38 @@ using MVP.Application.DTOs;
 
 namespace MVP.Application.Validators;
 
-public class OnboardingRequestDTOValidator : AbstractValidator<OnboardingRequestDTO>
+public class OnboardingRequestDtoValidator : AbstractValidator<OnboardingRequestDto>
 {
-    public OnboardingRequestDTOValidator()
+    public OnboardingRequestDtoValidator()
     {
-        RuleFor(x => x.EmpresaNombre)
-            .NotEmpty().WithMessage("El nombre de la empresa es obligatorio.")
-            .MaximumLength(200).WithMessage("El nombre de la empresa no puede exceder los 200 caracteres.");
+        RuleFor(x => x.CompanyName)
+            .NotEmpty().WithMessage("Company name is required.")
+            .MaximumLength(200).WithMessage("Company name cannot exceed 200 characters.");
 
-        RuleFor(x => x.Dominio)
-            .NotEmpty().WithMessage("El dominio es obligatorio.")
-            .MaximumLength(100).WithMessage("El dominio no puede exceder los 100 caracteres.");
+        RuleFor(x => x.Domain)
+            .NotEmpty().WithMessage("Domain is required.")
+            .MaximumLength(100).WithMessage("Domain cannot exceed 100 characters.");
 
         RuleFor(x => x.AdminEmail)
-            .NotEmpty().WithMessage("El correo electrónico del administrador es obligatorio.")
-            .EmailAddress().WithMessage("El formato del correo electrónico del administrador no es válido.")
-            .MaximumLength(256).WithMessage("El correo electrónico no puede exceder los 256 caracteres.");
+            .NotEmpty().WithMessage("Admin email is required.")
+            .EmailAddress().WithMessage("Invalid admin email format.")
+            .MaximumLength(256).WithMessage("Email cannot exceed 256 characters.");
 
         RuleFor(x => x.AdminPassword)
-            .NotEmpty().WithMessage("La contraseña del administrador es obligatoria.")
-            .MinimumLength(6).WithMessage("La contraseña debe tener al menos 6 caracteres.")
-            .MaximumLength(100).WithMessage("La contraseña no puede exceder los 100 caracteres.");
+            .NotEmpty().WithMessage("Admin password is required.")
+            .MinimumLength(6).WithMessage("Password must be at least 6 characters long.")
+            .MaximumLength(100).WithMessage("Password cannot exceed 100 characters.");
 
-        RuleFor(x => x.AdminNombre)
-            .NotEmpty().WithMessage("El nombre del administrador es obligatorio.")
-            .MaximumLength(100).WithMessage("El nombre del administrador no puede exceder los 100 caracteres.");
+        RuleFor(x => x.AdminFirstName)
+            .NotEmpty().WithMessage("Admin first name is required.")
+            .MaximumLength(100).WithMessage("First name cannot exceed 100 characters.");
 
-        RuleFor(x => x.AdminPrimerApellido)
-            .NotEmpty().WithMessage("El primer apellido del administrador es obligatorio.")
-            .MaximumLength(100).WithMessage("El primer apellido no puede exceder los 100 caracteres.");
+        RuleFor(x => x.AdminLastName)
+            .NotEmpty().WithMessage("Admin last name is required.")
+            .MaximumLength(100).WithMessage("Last name cannot exceed 100 characters.");
 
-        RuleFor(x => x.AdminSegundoApellido)
-            .MaximumLength(100).WithMessage("El segundo apellido no puede exceder los 100 caracteres.")
-            .When(x => !string.IsNullOrEmpty(x.AdminSegundoApellido));
+        RuleFor(x => x.AdminSecondLastName)
+            .MaximumLength(100).WithMessage("Second last name cannot exceed 100 characters.")
+            .When(x => !string.IsNullOrEmpty(x.AdminSecondLastName));
     }
 }

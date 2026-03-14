@@ -3,72 +3,59 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MVP.Application.Interfaces;
 using MVP.Domain.Entities;
-using MVP.Domain.Interfaces;
-using MVP.Infrastructure.Identity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-using MVP.Infrastructure.Persistence;
-
 namespace MVP.Infrastructure.Services;
 
 public class IdentityService(
-    UserManager<ApplicationUser> userManager,
-    RoleManager<ApplicationRole> roleManager,
-    IApplicationDbContext context,
-    IMapper mapper) : IIdentityService
+    UserManager<User> userManager,
+    RoleManager<Role> roleManager,
+    IApplicationDbContext context) : IIdentityService
 {
-    public async Task<List<Usuario>> GetUsuariosActivosAsync()
+    public async Task<List<User>> GetActiveUsersAsync()
     {
-        var appUsers = await userManager.Users
-            .Where(u => !u.Borrado)
-            .Include(u => u.UserRoles)
+        return await userManager.Users
+            .Where(u => !u.IsDeleted)
             .Include(u => u.Tenant)
             .ToListAsync();
-        return mapper.Map<List<Usuario>>(appUsers);
     }
 
-    public async Task<(List<Usuario> Items, int TotalCount)> GetUsuariosActivosPagedAsync(int pageNumber, int pageSize)
+    public async Task<(List<User> Items, int TotalCount)> GetActiveUsersPagedAsync(int pageNumber, int pageSize)
     {
-        var query = userManager.Users.Where(u => !u.Borrado);
+        var query = userManager.Users.Where(u => !u.IsDeleted);
         int totalCount = await query.CountAsync();
 
         var items = await query
-            .Include(u => u.UserRoles)
             .Include(u => u.Tenant)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
 
-        return (mapper.Map<List<Usuario>>(items), totalCount);
+        return (items, totalCount);
     }
 
-    public async Task<Usuario?> GetUsuarioActivoByUidAsync(Guid uid)
+    public async Task<User?> GetActiveUserByUidAsync(Guid uid)
     {
-        var appUser = await userManager.Users
-            .Include(u => u.UserRoles)
+        return await userManager.Users
             .Include(u => u.Tenant)
-            .FirstOrDefaultAsync(u => u.Uid == uid && !u.Borrado);
-        
-        return appUser == null ? null : mapper.Map<Usuario>(appUser);
+            .FirstOrDefaultAsync(u => u.Uid == uid && !u.IsDeleted);
     }
 
-    public async Task<ApplicationResult> CrearUsuarioAsync(Usuario usuario, string password, List<string> rolesNombres)
+    public async Task<ApplicationResult> CreateUserAsync(User user, string password, List<string> roleNames)
     {
-        var appUser = mapper.Map<ApplicationUser>(usuario);
-        appUser.UserName = usuario.UserName ?? usuario.Email;
-        appUser.Email = usuario.Email;
+        user.UserName ??= user.Email;
 
         await using var transaction = await context.BeginTransactionAsync();
         try
         {
-            var result = await userManager.CreateAsync(appUser, password);
+            var result = await userManager.CreateAsync(user, password);
 
-            if (result.Succeeded && rolesNombres.Any())
+            if (result.Succeeded && roleNames.Any())
             {
-                var roleResult = await userManager.AddToRolesAsync(appUser, rolesNombres);
+                var roleResult = await userManager.AddToRolesAsync(user, roleNames);
                 if (!roleResult.Succeeded)
                 {
                     await transaction.RollbackAsync();
@@ -92,27 +79,35 @@ public class IdentityService(
         }
     }
 
-    public async Task<ApplicationResult> ActualizarUsuarioAsync(Usuario usuario, List<string> rolesNombres)
+    public async Task<ApplicationResult> UpdateUserAsync(User user, List<string> roleNames)
     {
-        var appUser = await userManager.Users.FirstOrDefaultAsync(u => u.Uid == usuario.Uid);
-        if (appUser == null)
-            return ApplicationResult.Failure(new[] { "Usuario no encontrado." });
+        var existingUser = await userManager.Users.FirstOrDefaultAsync(u => u.Uid == user.Uid);
+        if (existingUser == null)
+            return ApplicationResult.Failure(new[] { "User not found." });
 
-        mapper.Map(usuario, appUser);
+        existingUser.FirstName = user.FirstName;
+        existingUser.LastName = user.LastName;
+        existingUser.SecondLastName = user.SecondLastName;
+        existingUser.FriendlyName = user.FriendlyName;
+        existingUser.Email = user.Email;
+        existingUser.UserName = user.Email;
+        existingUser.PhoneNumber = user.PhoneNumber;
+        existingUser.CatStatusAccountId = user.CatStatusAccountId;
+        existingUser.TenantId = user.TenantId;
 
         await using var transaction = await context.BeginTransactionAsync();
         try
         {
-            var result = await userManager.UpdateAsync(appUser);
+            var result = await userManager.UpdateAsync(existingUser);
 
             if (result.Succeeded)
             {
-                var rolesActuales = await userManager.GetRolesAsync(appUser);
-                if (rolesActuales.Any())
-                    await userManager.RemoveFromRolesAsync(appUser, rolesActuales);
+                var currentRoles = await userManager.GetRolesAsync(existingUser);
+                if (currentRoles.Any())
+                    await userManager.RemoveFromRolesAsync(existingUser, currentRoles);
 
-                if (rolesNombres.Any())
-                    await userManager.AddToRolesAsync(appUser, rolesNombres);
+                if (roleNames.Any())
+                    await userManager.AddToRolesAsync(existingUser, roleNames);
 
                 await transaction.CommitAsync();
                 return ApplicationResult.Success();
@@ -128,55 +123,57 @@ public class IdentityService(
         }
     }
 
-    public async Task<ApplicationResult> BorrarUsuarioAsync(Guid uid)
+    public async Task<ApplicationResult> DeleteUserAsync(Guid uid)
     {
-        var appUser = await userManager.Users.FirstOrDefaultAsync(u => u.Uid == uid && !u.Borrado);
-        if (appUser == null) 
-            return ApplicationResult.Failure("Usuario no encontrado.", ErrorType.NotFound);
+        var user = await userManager.Users.FirstOrDefaultAsync(u => u.Uid == uid && !u.IsDeleted);
+        if (user == null) 
+            return ApplicationResult.Failure("User not found.", ErrorType.NotFound);
 
-        appUser.Borrado = true;
-        await userManager.UpdateAsync(appUser);
+        user.IsDeleted = true;
+        await userManager.UpdateAsync(user);
         return ApplicationResult.Success();
     }
 
-    public async Task<List<Rol>> GetRolesByIdsAsync(IEnumerable<int> roleIds)
+    public async Task<List<string>> GetUserRolesNamesAsync(User user)
     {
-        var roles = await roleManager.Roles
+        var roles = await userManager.GetRolesAsync(user);
+        return roles.ToList();
+    }
+
+    public async Task<List<Role>> GetRolesByIdsAsync(IEnumerable<int> roleIds)
+    {
+        return await roleManager.Roles
             .Include(r => r.Tenant)
             .Where(r => roleIds.Contains(r.Id))
             .ToListAsync();
-        return mapper.Map<List<Rol>>(roles);
     }
 
-    public async Task<List<Rol>> GetRolesByUidsAsync(IEnumerable<Guid> roleUids)
+    public async Task<List<Role>> GetRolesByUidsAsync(IEnumerable<Guid> roleUids)
     {
-        var roles = await roleManager.Roles
+        return await roleManager.Roles
             .Include(r => r.Tenant)
             .Where(r => roleUids.Contains(r.Uid))
             .ToListAsync();
-        return mapper.Map<List<Rol>>(roles);
     }
 
-    public async Task<List<Rol>> GetRolesActivosAsync()
+    public async Task<List<Role>> GetActiveRolesAsync()
     {
-        var roles = await roleManager.Roles
+        return await roleManager.Roles
             .Include(r => r.Tenant)
-            .Where(r => !r.Borrado)
+            .Where(r => !r.IsDeleted)
             .ToListAsync();
-        return mapper.Map<List<Rol>>(roles);
     }
 
-    public async Task<ApplicationResult> CrearRolAsync(Rol rol)
+    public async Task<ApplicationResult> CreateRoleAsync(Role role)
     {
-        var appRole = mapper.Map<ApplicationRole>(rol);
-        var result = await roleManager.CreateAsync(appRole);
+        var result = await roleManager.CreateAsync(role);
         return result.Succeeded
             ? ApplicationResult.Success()
             : ApplicationResult.Failure(result.Errors.Select(e => e.Description));
     }
 
-    public async Task<bool> RolExisteAsync(string rolNombre)
+    public async Task<bool> RoleExistsAsync(string roleName)
     {
-        return await roleManager.RoleExistsAsync(rolNombre);
+        return await roleManager.RoleExistsAsync(roleName);
     }
 }

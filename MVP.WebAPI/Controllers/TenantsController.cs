@@ -1,44 +1,48 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using Asp.Versioning;
 using MVP.Application.DTOs;
 using MVP.Application.Interfaces;
 using MVP.Domain.Constants;
-
+using Microsoft.AspNetCore.Authorization;
 using MVP.WebAPI.Extensions;
+using System;
+using System.Threading.Tasks;
 
 namespace MVP.WebAPI.Controllers;
 
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
 [ApiController]
-public class TenantsController(ITenantService service) : ControllerBase
+public class TenantsController(ITenantService tenantService) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<List<TenantDTO>>> Get() => Ok(await service.GetTodosAsync());
+    [Authorize(Roles = AppRoles.GlobalAdmin)]
+    public async Task<IActionResult> Get() 
+    {
+        var result = await tenantService.GetAllAsync();
+        return result.ToActionResult();
+    }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var result = await service.GetByIdAsync(id);
+        var result = await tenantService.GetByUidAsync(id);
         return result.ToActionResult();
     }
 
     [HttpPost]
     [Authorize(Roles = AppRoles.GlobalAdmin)]
-    public async Task<IActionResult> Post(TenantDTO dto)
+    public async Task<IActionResult> Post(TenantDto dto)
     {
-        var result = await service.CrearAsync(dto);
+        var result = await tenantService.CreateAsync(dto);
         return result.ToActionResult();
     }
 
     [HttpPut]
     [Authorize(Roles = AppRoles.GlobalAdmin)]
-    public async Task<IActionResult> Put(TenantDTO dto)
+    public async Task<IActionResult> Put(TenantDto dto)
     {
-        var result = await service.ActualizarAsync(dto);
+        var result = await tenantService.UpdateAsync(dto);
         return result.ToActionResult();
     }
 
@@ -46,7 +50,7 @@ public class TenantsController(ITenantService service) : ControllerBase
     [Authorize(Roles = AppRoles.GlobalAdmin)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var result = await service.EliminarAsync(id);
+        var result = await tenantService.DeleteAsync(id);
         return result.ToActionResult();
     }
 }

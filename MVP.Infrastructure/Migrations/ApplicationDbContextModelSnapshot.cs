@@ -23,63 +23,6 @@ namespace MVP.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("MVP.Domain.Entities.Archivo", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Borrado")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("EntidadId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("EntidadTipo")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Extension")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("NombreOriginal")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("RutaFisica")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long>("TamanoBytes")
-                        .HasColumnType("bigint");
-
-                    b.Property<int?>("TenantId")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("Uid")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId");
-
-                    b.HasIndex("Uid")
-                        .IsUnique();
-
-                    b.ToTable("Archivos", (string)null);
-                });
-
             modelBuilder.Entity("MVP.Domain.Entities.AuditLog", b =>
                 {
                     b.Property<int>("Id")
@@ -88,10 +31,14 @@ namespace MVP.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AffectedColumns")
+                    b.Property<string>("AuditType")
+                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("DateTime")
+                    b.Property<string>("ChangedColumns")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("NewValues")
@@ -111,10 +58,6 @@ namespace MVP.Infrastructure.Migrations
                     b.Property<int?>("TenantId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<Guid>("Uid")
                         .HasColumnType("uuid");
 
@@ -129,7 +72,7 @@ namespace MVP.Infrastructure.Migrations
                     b.ToTable("AuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("MVP.Domain.Entities.Documento", b =>
+            modelBuilder.Entity("MVP.Domain.Entities.Document", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -137,52 +80,52 @@ namespace MVP.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("ArchivoId")
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EntityId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("FileId")
                         .HasColumnType("integer");
 
-                    b.Property<bool>("Borrado")
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("EntidadId")
-                        .IsRequired()
+                    b.Property<string>("RejectionObservations")
                         .HasColumnType("text");
 
-                    b.Property<string>("EntidadTipo")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("EstadoValidacion")
+                    b.Property<int?>("TenantId")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime>("FechaModificacion")
+                    b.Property<Guid>("Uid")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("ObservacionesRechazo")
-                        .HasColumnType("text");
-
-                    b.Property<int?>("TenantId")
+                    b.Property<int>("ValidationStatus")
                         .HasColumnType("integer");
-
-                    b.Property<string>("TipoDocumento")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("Uid")
-                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ArchivoId");
+                    b.HasIndex("FileId");
 
                     b.HasIndex("TenantId");
 
                     b.HasIndex("Uid")
                         .IsUnique();
 
-                    b.ToTable("Documentos", (string)null);
+                    b.ToTable("Documents", (string)null);
                 });
 
-            modelBuilder.Entity("MVP.Domain.Entities.Modulo", b =>
+            modelBuilder.Entity("MVP.Domain.Entities.FileEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -190,26 +133,40 @@ namespace MVP.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Accion")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Descripcion")
+                    b.Property<string>("ContentType")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Icono")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EntityId")
+                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("Orden")
-                        .HasColumnType("integer");
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasColumnType("text");
 
-                    b.Property<int?>("PadreId")
-                        .HasColumnType("integer");
+                    b.Property<string>("Extension")
+                        .IsRequired()
+                        .HasColumnType("text");
 
-                    b.Property<bool>("Produccion")
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("TipoModuloId")
+                    b.Property<string>("OriginalName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhysicalPath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("TenantId")
                         .HasColumnType("integer");
 
                     b.Property<Guid>("Uid")
@@ -217,15 +174,15 @@ namespace MVP.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PadreId");
+                    b.HasIndex("TenantId");
 
                     b.HasIndex("Uid")
                         .IsUnique();
 
-                    b.ToTable("Modulos", (string)null);
+                    b.ToTable("Files", (string)null);
                 });
 
-            modelBuilder.Entity("MVP.Domain.Entities.Rol", b =>
+            modelBuilder.Entity("MVP.Domain.Entities.Module", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -233,16 +190,71 @@ namespace MVP.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("Borrado")
+                    b.Property<string>("Action")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Icon")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsProduction")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Descripcion")
+                    b.Property<int>("ModuleTypeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Order")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ParentId")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("Uid")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentId");
+
+                    b.HasIndex("Uid")
+                        .IsUnique();
+
+                    b.ToTable("Modules", (string)null);
+                });
+
+            modelBuilder.Entity("MVP.Domain.Entities.Role", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
                         .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<int?>("TenantId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("TenantId1")
                         .HasColumnType("integer");
 
                     b.Property<Guid>("Uid")
@@ -250,32 +262,36 @@ namespace MVP.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex");
+
                     b.HasIndex("TenantId");
 
-                    b.ToTable("Rol");
+                    b.HasIndex("TenantId1");
+
+                    b.HasIndex("Uid")
+                        .IsUnique();
+
+                    b.ToTable("Roles", (string)null);
                 });
 
-            modelBuilder.Entity("MVP.Domain.Entities.RolModulo", b =>
+            modelBuilder.Entity("MVP.Domain.Entities.RoleModule", b =>
                 {
-                    b.Property<int>("RolId")
+                    b.Property<int>("RoleId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("ModuloId")
+                    b.Property<int>("ModuleId")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("ApplicationRoleId")
+                    b.Property<int>("Permission")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Permiso")
-                        .HasColumnType("integer");
+                    b.HasKey("RoleId", "ModuleId");
 
-                    b.HasKey("RolId", "ModuloId");
+                    b.HasIndex("ModuleId");
 
-                    b.HasIndex("ApplicationRoleId");
-
-                    b.HasIndex("ModuloId");
-
-                    b.ToTable("RolesModulos", (string)null);
+                    b.ToTable("RoleModules", (string)null);
                 });
 
             modelBuilder.Entity("MVP.Domain.Entities.Tenant", b =>
@@ -286,16 +302,16 @@ namespace MVP.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("Borrado")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Dominio")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("FechaCreacion")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Nombre")
+                    b.Property<string>("Domain")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -310,110 +326,7 @@ namespace MVP.Infrastructure.Migrations
                     b.ToTable("Tenants", (string)null);
                 });
 
-            modelBuilder.Entity("MVP.Domain.Entities.Usuario", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Borrado")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("CatStatusAccountId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Email")
-                        .HasColumnType("text");
-
-                    b.Property<string>("FriendlyName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("PrimerApellido")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("RefreshToken")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("RefreshTokenExpiration")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.PrimitiveCollection<List<int>>("RoleIds")
-                        .HasColumnType("integer[]");
-
-                    b.Property<string>("SegundoApellido")
-                        .HasColumnType("text");
-
-                    b.Property<int?>("TenantId")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("Uid")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("UserName")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId");
-
-                    b.ToTable("Usuario");
-                });
-
-            modelBuilder.Entity("MVP.Infrastructure.Identity.ApplicationRole", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Borrado")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Descripcion")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("NormalizedName")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<int?>("TenantId")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("Uid")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NormalizedName")
-                        .IsUnique()
-                        .HasDatabaseName("RoleNameIndex");
-
-                    b.HasIndex("TenantId");
-
-                    b.HasIndex("Uid")
-                        .IsUnique();
-
-                    b.ToTable("Roles", (string)null);
-                });
-
-            modelBuilder.Entity("MVP.Infrastructure.Identity.ApplicationUser", b =>
+            modelBuilder.Entity("MVP.Domain.Entities.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -423,9 +336,6 @@ namespace MVP.Infrastructure.Migrations
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer");
-
-                    b.Property<bool>("Borrado")
-                        .HasColumnType("boolean");
 
                     b.Property<int>("CatStatusAccountId")
                         .HasColumnType("integer");
@@ -441,7 +351,18 @@ namespace MVP.Infrastructure.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("FriendlyName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -450,10 +371,6 @@ namespace MVP.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -472,23 +389,25 @@ namespace MVP.Infrastructure.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("PrimerApellido")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("RefreshToken")
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("RefreshTokenExpiration")
                         .HasColumnType("timestamp with time zone");
 
+                    b.PrimitiveCollection<List<int>>("RoleIds")
+                        .HasColumnType("integer[]");
+
+                    b.Property<string>("SecondLastName")
+                        .HasColumnType("text");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
 
-                    b.Property<string>("SegundoApellido")
-                        .HasColumnType("text");
-
                     b.Property<int?>("TenantId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("TenantId1")
                         .HasColumnType("integer");
 
                     b.Property<bool>("TwoFactorEnabled")
@@ -514,10 +433,12 @@ namespace MVP.Infrastructure.Migrations
 
                     b.HasIndex("TenantId");
 
+                    b.HasIndex("TenantId1");
+
                     b.HasIndex("Uid")
                         .IsUnique();
 
-                    b.ToTable("Usuarios", (string)null);
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -541,7 +462,7 @@ namespace MVP.Infrastructure.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("RolesClaims", (string)null);
+                    b.ToTable("RoleClaims", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<int>", b =>
@@ -565,7 +486,7 @@ namespace MVP.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UsuariosClaims", (string)null);
+                    b.ToTable("UserClaims", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<int>", b =>
@@ -586,7 +507,7 @@ namespace MVP.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UsuariosLogins", (string)null);
+                    b.ToTable("UserLogins", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<int>", b =>
@@ -601,7 +522,7 @@ namespace MVP.Infrastructure.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("UsuariosRoles", (string)null);
+                    b.ToTable("UserRoles", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
@@ -620,24 +541,14 @@ namespace MVP.Infrastructure.Migrations
 
                     b.HasKey("UserId", "LoginProvider", "Name");
 
-                    b.ToTable("UsuariosTokens", (string)null);
+                    b.ToTable("UserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("MVP.Domain.Entities.Archivo", b =>
+            modelBuilder.Entity("MVP.Domain.Entities.Document", b =>
                 {
-                    b.HasOne("MVP.Domain.Entities.Tenant", "Tenant")
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Tenant");
-                });
-
-            modelBuilder.Entity("MVP.Domain.Entities.Documento", b =>
-                {
-                    b.HasOne("MVP.Domain.Entities.Archivo", "Archivo")
-                        .WithMany("Documentos")
-                        .HasForeignKey("ArchivoId")
+                    b.HasOne("MVP.Domain.Entities.FileEntity", "File")
+                        .WithMany("Documents")
+                        .HasForeignKey("FileId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("MVP.Domain.Entities.Tenant", "Tenant")
@@ -645,85 +556,81 @@ namespace MVP.Infrastructure.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("Archivo");
+                    b.Navigation("File");
 
                     b.Navigation("Tenant");
                 });
 
-            modelBuilder.Entity("MVP.Domain.Entities.Modulo", b =>
-                {
-                    b.HasOne("MVP.Domain.Entities.Modulo", "Padre")
-                        .WithMany("SubModulos")
-                        .HasForeignKey("PadreId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Padre");
-                });
-
-            modelBuilder.Entity("MVP.Domain.Entities.Rol", b =>
+            modelBuilder.Entity("MVP.Domain.Entities.FileEntity", b =>
                 {
                     b.HasOne("MVP.Domain.Entities.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("MVP.Domain.Entities.Module", b =>
+                {
+                    b.HasOne("MVP.Domain.Entities.Module", "Parent")
+                        .WithMany("SubModules")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Parent");
+                });
+
+            modelBuilder.Entity("MVP.Domain.Entities.Role", b =>
+                {
+                    b.HasOne("MVP.Domain.Entities.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MVP.Domain.Entities.Tenant", null)
                         .WithMany("Roles")
-                        .HasForeignKey("TenantId");
+                        .HasForeignKey("TenantId1");
 
                     b.Navigation("Tenant");
                 });
 
-            modelBuilder.Entity("MVP.Domain.Entities.RolModulo", b =>
+            modelBuilder.Entity("MVP.Domain.Entities.RoleModule", b =>
                 {
-                    b.HasOne("MVP.Infrastructure.Identity.ApplicationRole", null)
-                        .WithMany("PermisosModulos")
-                        .HasForeignKey("ApplicationRoleId");
-
-                    b.HasOne("MVP.Domain.Entities.Modulo", "Modulo")
+                    b.HasOne("MVP.Domain.Entities.Module", "Module")
                         .WithMany()
-                        .HasForeignKey("ModuloId")
+                        .HasForeignKey("ModuleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MVP.Domain.Entities.Rol", "Rol")
-                        .WithMany("PermisosModulos")
-                        .HasForeignKey("RolId")
+                    b.HasOne("MVP.Domain.Entities.Role", "Role")
+                        .WithMany("RoleModules")
+                        .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Modulo");
+                    b.Navigation("Module");
 
-                    b.Navigation("Rol");
+                    b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("MVP.Domain.Entities.Usuario", b =>
-                {
-                    b.HasOne("MVP.Domain.Entities.Tenant", "Tenant")
-                        .WithMany("Usuarios")
-                        .HasForeignKey("TenantId");
-
-                    b.Navigation("Tenant");
-                });
-
-            modelBuilder.Entity("MVP.Infrastructure.Identity.ApplicationRole", b =>
+            modelBuilder.Entity("MVP.Domain.Entities.User", b =>
                 {
                     b.HasOne("MVP.Domain.Entities.Tenant", "Tenant")
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("Tenant");
-                });
-
-            modelBuilder.Entity("MVP.Infrastructure.Identity.ApplicationUser", b =>
-                {
-                    b.HasOne("MVP.Domain.Entities.Tenant", "Tenant")
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                    b.HasOne("MVP.Domain.Entities.Tenant", null)
+                        .WithMany("Users")
+                        .HasForeignKey("TenantId1");
 
                     b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
-                    b.HasOne("MVP.Infrastructure.Identity.ApplicationRole", null)
+                    b.HasOne("MVP.Domain.Entities.Role", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -732,7 +639,7 @@ namespace MVP.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<int>", b =>
                 {
-                    b.HasOne("MVP.Infrastructure.Identity.ApplicationUser", null)
+                    b.HasOne("MVP.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -741,7 +648,7 @@ namespace MVP.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<int>", b =>
                 {
-                    b.HasOne("MVP.Infrastructure.Identity.ApplicationUser", null)
+                    b.HasOne("MVP.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -750,14 +657,14 @@ namespace MVP.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<int>", b =>
                 {
-                    b.HasOne("MVP.Infrastructure.Identity.ApplicationRole", null)
+                    b.HasOne("MVP.Domain.Entities.Role", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MVP.Infrastructure.Identity.ApplicationUser", null)
-                        .WithMany("UserRoles")
+                    b.HasOne("MVP.Domain.Entities.User", null)
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -765,43 +672,33 @@ namespace MVP.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
                 {
-                    b.HasOne("MVP.Infrastructure.Identity.ApplicationUser", null)
+                    b.HasOne("MVP.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("MVP.Domain.Entities.Archivo", b =>
+            modelBuilder.Entity("MVP.Domain.Entities.FileEntity", b =>
                 {
-                    b.Navigation("Documentos");
+                    b.Navigation("Documents");
                 });
 
-            modelBuilder.Entity("MVP.Domain.Entities.Modulo", b =>
+            modelBuilder.Entity("MVP.Domain.Entities.Module", b =>
                 {
-                    b.Navigation("SubModulos");
+                    b.Navigation("SubModules");
                 });
 
-            modelBuilder.Entity("MVP.Domain.Entities.Rol", b =>
+            modelBuilder.Entity("MVP.Domain.Entities.Role", b =>
                 {
-                    b.Navigation("PermisosModulos");
+                    b.Navigation("RoleModules");
                 });
 
             modelBuilder.Entity("MVP.Domain.Entities.Tenant", b =>
                 {
                     b.Navigation("Roles");
 
-                    b.Navigation("Usuarios");
-                });
-
-            modelBuilder.Entity("MVP.Infrastructure.Identity.ApplicationRole", b =>
-                {
-                    b.Navigation("PermisosModulos");
-                });
-
-            modelBuilder.Entity("MVP.Infrastructure.Identity.ApplicationUser", b =>
-                {
-                    b.Navigation("UserRoles");
+                    b.Navigation("Users");
                 });
 #pragma warning restore 612, 618
         }

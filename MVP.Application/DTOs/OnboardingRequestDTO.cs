@@ -1,12 +1,12 @@
 namespace MVP.Application.DTOs;
 
-public class OnboardingRequestDTO
+public record OnboardingRequestDto
 {
-    public string EmpresaNombre { get; init; } = string.Empty;
-    public string Dominio { get; init; } = string.Empty;
+    public string CompanyName { get; init; } = string.Empty;
+    public string Domain { get; init; } = string.Empty;
     public string AdminEmail { get; init; } = string.Empty;
     public string AdminPassword { get; init; } = string.Empty;
-    public string AdminNombre { get; init; } = string.Empty;
-    public string AdminPrimerApellido { get; init; } = string.Empty;
-    public string? AdminSegundoApellido { get; init; }
+    public string AdminFirstName { get; init; } = string.Empty;
+    public string AdminLastName { get; init; } = string.Empty;
+    public string? AdminSecondLastName { get; init; }
 }

@@ -22,7 +22,12 @@ public class SmtpEmailService : IEmailService
         _logger = logger;
     }
 
-    public async Task<ApplicationResult> SendEmailAsync(string to, string subject, string body, bool isHtml = true)
+    public async Task<ApplicationResult> SendEmailAsync(string to, string subject, string body)
+    {
+        return await SendEmailInternalAsync(to, subject, body, true);
+    }
+
+    private async Task<ApplicationResult> SendEmailInternalAsync(string to, string subject, string body, bool isHtml = true)
     {
         try
         {
@@ -63,32 +68,32 @@ public class SmtpEmailService : IEmailService
 
     public async Task<ApplicationResult> SendWelcomeEmailAsync(string to, string userName)
     {
-        var subject = "Bienvenido a SGEDI - Registro Exitoso";
+        var subject = "Welcome to MVP Platform - Registration Successful";
         var body = $@"
             <div style='font-family: sans-serif; color: #333;'>
-                <h2>¡Hola {userName}!</h2>
-                <p>Tu organización ha sido registrada correctamente en la plataforma <strong>SGEDI</strong>.</p>
-                <p>Ya puedes acceder con tus credenciales de administrador.</p>
+                <h2>Hello {userName}!</h2>
+                <p>Your organization has been successfully registered on the <strong>MVP</strong> platform.</p>
+                <p>You can now access with your administrator credentials.</p>
                 <br/>
-                <p>Saludos,<br/>El equipo de SGEDI</p>
+                <p>Regards,<br/>The MVP Team</p>
             </div>";
 
-        return await SendEmailAsync(to, subject, body, true);
+        return await SendEmailInternalAsync(to, subject, body, true);
     }
 
     public async Task<ApplicationResult> SendPasswordResetEmailAsync(string to, string resetLink)
     {
-        var subject = "Recuperación de Contraseña - SGEDI";
+        var subject = "Password Recovery - MVP";
         var body = $@"
             <div style='font-family: sans-serif; color: #333;'>
-                <h3>Recuperación de Contraseña</h3>
-                <p>Hemos recibido una solicitud para cambiar tu contraseña.</p>
-                <p>Haz clic en el siguiente enlace para establecer una nueva contraseña:</p>
-                <p><a href='{resetLink}' style='background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;'>Recuperar mi contraseña</a></p>
+                <h3>Password Recovery</h3>
+                <p>We received a request to change your password.</p>
+                <p>Click the following link to set a new password:</p>
+                <p><a href='{resetLink}' style='background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;'>Recover my password</a></p>
                 <br/>
-                <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
+                <p>If you did not request this change, you can ignore this email.</p>
             </div>";
 
-        return await SendEmailAsync(to, subject, body, true);
+        return await SendEmailInternalAsync(to, subject, body, true);
     }
 }

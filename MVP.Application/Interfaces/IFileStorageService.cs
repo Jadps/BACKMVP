@@ -5,7 +5,7 @@ namespace MVP.Application.Interfaces;
 
 public interface IFileStorageService
 {
-    Task<ApplicationResult<string>> UploadFileAsync(Stream fileStream, string fileName, string contentType);
-    Task<ApplicationResult<Stream>> DownloadFileAsync(string fileUrlOrPath);
-    Task<ApplicationResult> DeleteFileAsync(string fileUrlOrPath);
+    Task<ApplicationResult<string>> SaveFileAsync(Stream fileStream, string fileName);
+    Task<ApplicationResult<Stream>> GetFileAsync(string physicalPath);
+    Task<ApplicationResult> DeleteFileAsync(string physicalPath);
 }

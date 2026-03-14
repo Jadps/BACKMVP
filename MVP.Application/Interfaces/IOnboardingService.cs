@@ -5,5 +5,5 @@ namespace MVP.Application.Interfaces;
 
 public interface IOnboardingService
 {
-    Task<ApplicationResult> RegistrarNuevoTenantAsync(OnboardingRequestDTO request);
+    Task<ApplicationResult> RegisterNewTenantAsync(OnboardingRequestDto request);
 }

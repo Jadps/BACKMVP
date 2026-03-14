@@ -22,7 +22,7 @@ public class SftpStorageService : IFileStorageService
         return new SftpClient(_options.Host, _options.Port, _options.Username, _options.Password);
     }
 
-    public async Task<ApplicationResult<string>> UploadFileAsync(Stream fileStream, string fileName, string contentType)
+    public async Task<ApplicationResult<string>> SaveFileAsync(Stream fileStream, string fileName)
     {
         try 
         {
@@ -47,7 +47,7 @@ public class SftpStorageService : IFileStorageService
         }
     }
 
-    public async Task<ApplicationResult<Stream>> DownloadFileAsync(string fileUrlOrPath)
+    public async Task<ApplicationResult<Stream>> GetFileAsync(string fileUrlOrPath)
     {
         try 
         {

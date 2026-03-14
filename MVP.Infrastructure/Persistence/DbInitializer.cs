@@ -2,9 +2,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using MVP.Domain.Entities;
-using MVP.Infrastructure.Identity;
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace MVP.Infrastructure.Persistence;
@@ -24,8 +24,8 @@ public static class DbInitializer
                 await context.Database.MigrateAsync();
             }
 
-            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
             
             await SeedAsync(userManager, roleManager, context);
         }
@@ -35,46 +35,80 @@ public static class DbInitializer
         }
     }
 
-    private static async Task SeedAsync(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, ApplicationDbContext context)
+    private static async Task SeedAsync(UserManager<User> userManager, RoleManager<Role> roleManager, ApplicationDbContext context)
     {        
-        var tenant = await context.Tenants.FirstOrDefaultAsync(t => t.Nombre == "Empresa Principal");
+        var tenant = await context.Tenants.FirstOrDefaultAsync(t => t.Name == "Main Company");
         if (tenant == null)
         {
-            tenant = new Tenant 
+            tenant = new()
             { 
-                Nombre = "Empresa Principal", 
+                Name = "Main Company", 
                 Uid = Guid.NewGuid(),
-                FechaCreacion = DateTime.UtcNow,
-                Borrado = false
+                CreatedAt = DateTime.UtcNow,
+                IsDeleted = false
             };
             context.Tenants.Add(tenant);
             await context.SaveChangesAsync();
         }
 
-        if (await roleManager.FindByNameAsync("Admin") == null)
+        if (!await context.Modules.AnyAsync())
         {
-            await roleManager.CreateAsync(new ApplicationRole 
+            var baseModules = new List<Module>
+            {
+                new() { Uid = Guid.NewGuid(), Description = "Dashboard", Action = "/dashboard", Icon = "pi pi-home", Order = 1, ModuleTypeId = 1 },
+                new() { Uid = Guid.NewGuid(), Description = "Companies", Action = "/tenants", Icon = "pi pi-building", Order = 2, ModuleTypeId = 1 },
+                new() { Uid = Guid.NewGuid(), Description = "Users", Action = "/users", Icon = "pi pi-users", Order = 3, ModuleTypeId = 1 },
+                new() { Uid = Guid.NewGuid(), Description = "Roles & Permissions", Action = "/roles", Icon = "pi pi-id-card", Order = 4, ModuleTypeId = 1 }
+            };
+            context.Modules.AddRange(baseModules);
+            await context.SaveChangesAsync();
+        }
+
+        var adminRole = await roleManager.FindByNameAsync("Admin");
+        if (adminRole == null)
+        {
+            adminRole = new()
             { 
                 Name = "Admin", 
                 TenantId = null, 
                 Uid = Guid.NewGuid(),
-                Borrado = false
-            });
+                IsDeleted = false
+            };
+            await roleManager.CreateAsync(adminRole);
         }
+
+        var modulesDb = await context.Modules.ToListAsync();
+        foreach (var module in modulesDb)
+        {
+            var permissionExists = await context.Set<RoleModule>()
+                .AnyAsync(rm => rm.RoleId == adminRole.Id && rm.ModuleId == module.Id);
+
+            if (!permissionExists)
+            {
+                context.Set<RoleModule>().Add(new()
+                {
+                    RoleId = adminRole.Id,
+                    ModuleId = module.Id,
+                    Permission = PermissionLevel.Admin
+                });
+            }
+        }
+        await context.SaveChangesAsync();
 
         if (await userManager.FindByEmailAsync("jadp.xs@gmail.com") == null)
         {
-            var appUser = new ApplicationUser
+            var appUser = new User
             {
                 UserName = "jadp.xs@gmail.com",
                 Email = "jadp.xs@gmail.com",
-                Nombre = "Alonso",
-                PrimerApellido = "Admin",
-                FriendlyName = "Alonso Admin",
+                FirstName = "Jesus Alonso",
+                LastName = "Dominguez",
+                SecondLastName = "Perez",
+                FriendlyName = "JADP",
                 TenantId = null, 
                 EmailConfirmed = true,
                 Uid = Guid.NewGuid(),
-                Borrado = false,
+                IsDeleted = false,
                 CatStatusAccountId = 1
             };
 
@@ -82,10 +116,6 @@ public static class DbInitializer
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(appUser, "Admin");
-            }
-            else
-            {
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
             }
         }
     }

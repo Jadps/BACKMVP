@@ -6,5 +6,5 @@ namespace MVP.Application.Interfaces.Catalogos;
 
 public interface IGenericCatalogService
 {
-    Task<List<CatalogoItemDTO>> GetCatalogoAsync(string nombreCatalogo);
+    Task<List<CatalogItemDto>> GetCatalogAsync(string catalogName);
 }

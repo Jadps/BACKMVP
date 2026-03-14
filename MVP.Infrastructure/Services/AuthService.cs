@@ -2,25 +2,23 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Hangfire;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MVP.Application.DTOs;
 using MVP.Application.Interfaces;
 using MVP.Domain.Entities;
-using MVP.Infrastructure.Identity;
-
-using Microsoft.Extensions.Options;
 using MVP.Infrastructure.Configuration;
 
 namespace MVP.Infrastructure.Services;
 
 public class AuthService(
-    UserManager<ApplicationUser> userManager, 
+    UserManager<User> userManager, 
     IOptions<JwtOptions> jwtOptions,
     IOptions<AppOptions> appOptions,
     IBackgroundJobClient backgroundJobs,
@@ -29,15 +27,15 @@ public class AuthService(
     private readonly JwtOptions _jwt = jwtOptions.Value;
     private readonly AppOptions _app = appOptions.Value;
 
-    public async Task<ApplicationResult<AuthResponseDTO>> LoginAsync(LoginDTO model)
+    public async Task<ApplicationResult<AuthResponseDto>> LoginAsync(LoginDto model)
     {
         var user = await userManager.FindByNameAsync(model.Email);
         
-        if (user != null && !user.Borrado && await userManager.CheckPasswordAsync(user, model.Password))
+        if (user != null && !user.IsDeleted && await userManager.CheckPasswordAsync(user, model.Password))
         {
-            return ApplicationResult<AuthResponseDTO>.Success(await GenerarYAsignarTokensAsync(user));
+            return ApplicationResult<AuthResponseDto>.Success(await GenerateAndAssignTokensAsync(user));
         }
-        return ApplicationResult<AuthResponseDTO>.Failure("Email o contraseña incorrecta.", ErrorType.Unauthorized);
+        return ApplicationResult<AuthResponseDto>.Failure("Invalid email or password.", ErrorType.Unauthorized);
     }
 
     public async Task<ApplicationResult> LogoutAsync(string? userEmail)
@@ -55,22 +53,22 @@ public class AuthService(
         return ApplicationResult.Success();
     }
 
-    public async Task<ApplicationResult<AuthResponseDTO>> RefreshTokenAsync(RefreshTokenRequestDTO model)
+    public async Task<ApplicationResult<AuthResponseDto>> RefreshTokenAsync(RefreshTokenRequestDto model)
     {
         var user = await userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == model.RefreshToken);
         
-        if (user == null || user.Borrado || user.RefreshTokenExpiration <= DateTime.UtcNow)
+        if (user == null || user.IsDeleted || user.RefreshTokenExpiration <= DateTime.UtcNow)
         {
-            return ApplicationResult<AuthResponseDTO>.Failure("Refresh Token inválido o expirado.", ErrorType.Unauthorized);
+            return ApplicationResult<AuthResponseDto>.Failure("Invalid or expired Refresh Token.", ErrorType.Unauthorized);
         }
 
-        return ApplicationResult<AuthResponseDTO>.Success(await GenerarYAsignarTokensAsync(user));
+        return ApplicationResult<AuthResponseDto>.Success(await GenerateAndAssignTokensAsync(user));
     }
 
-    public async Task<ApplicationResult> ForgotPasswordAsync(ForgotPasswordDTO model)
+    public async Task<ApplicationResult> ForgotPasswordAsync(ForgotPasswordDto model)
     {
         var user = await userManager.FindByEmailAsync(model.Email);
-        if (user == null || user.Borrado)
+        if (user == null || user.IsDeleted)
         {
             return ApplicationResult.Success();
         }
@@ -86,12 +84,12 @@ public class AuthService(
         return ApplicationResult.Success();
     }
 
-    public async Task<ApplicationResult> ResetPasswordAsync(ResetPasswordDTO model)
+    public async Task<ApplicationResult> ResetPasswordAsync(ResetPasswordDto model)
     {
         var user = await userManager.FindByEmailAsync(model.Email);
-        if (user == null || user.Borrado)
+        if (user == null || user.IsDeleted)
         {
-            return ApplicationResult.Failure("Token o usuario inválido.", ErrorType.Validation);
+            return ApplicationResult.Failure("Invalid token or user.", ErrorType.Validation);
         }
 
         var resetResult = await userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
@@ -103,7 +101,7 @@ public class AuthService(
         return ApplicationResult.Success();
     }
 
-    private async Task<AuthResponseDTO> GenerarYAsignarTokensAsync(ApplicationUser user)
+    private async Task<AuthResponseDto> GenerateAndAssignTokensAsync(User user)
     {
         var userRoles = await userManager.GetRolesAsync(user);
 
@@ -131,7 +129,7 @@ public class AuthService(
         var secretKey = _jwt.SecretKey;
         if (string.IsNullOrEmpty(secretKey))
         {
-            throw new InvalidOperationException("Error de configuración de seguridad.");
+            throw new InvalidOperationException("Security configuration error: SecretKey is missing.");
         }
 
         var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
@@ -149,7 +147,7 @@ public class AuthService(
         user.RefreshTokenExpiration = DateTime.UtcNow.AddDays(7);
         await userManager.UpdateAsync(user);
 
-        return new AuthResponseDTO(
+        return new AuthResponseDto(
             new JwtSecurityTokenHandler().WriteToken(token),
             refreshToken,
             token.ValidTo

@@ -6,11 +6,11 @@ namespace MVP.Application.Interfaces;
 
 public interface IApplicationDbContext
 {
-    DbSet<Modulo> Modulos { get; }
+    DbSet<Module> Modules { get; }
     DbSet<Tenant> Tenants { get; }
     DbSet<AuditLog> AuditLogs { get; }
-    DbSet<Archivo> Archivos { get; }
-    DbSet<Documento> Documentos { get; }
+    DbSet<FileEntity> Files { get; }
+    DbSet<Document> Documents { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);

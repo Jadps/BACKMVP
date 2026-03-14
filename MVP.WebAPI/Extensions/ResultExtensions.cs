@@ -27,7 +27,7 @@ public static class ResultExtensions
 
     private static IActionResult MapErrorToActionResult(ErrorType type, string? message)
     {
-        var errorResponse = new { Error = message ?? "Ocurrió un error en la operación." };
+        var errorResponse = new { Error = message ?? "An error occurred during the operation." };
 
         return type switch
         {

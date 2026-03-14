@@ -1,14 +1,14 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
 using System.Reflection;
 using MVP.Infrastructure.Persistence;
 using MVP.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Hangfire;
 using Hangfire.PostgreSql;
-using MVP.Infrastructure.Identity;
-using Microsoft.Extensions.Http.Resilience;
 
 namespace MVP.Infrastructure;
 
@@ -22,46 +22,41 @@ public static class DependencyInjection
 
         services.AddAutoMapper(config => {}, Assembly.GetExecutingAssembly());
 
-
-        services.AddIdentityCore<ApplicationUser>(options => {
+        services.AddIdentityCore<User>(options => {
             options.Password.RequireDigit = false;
+            options.Password.RequiredLength = 6;
+            options.Password.RequireNonAlphanumeric = false;
+            options.Password.RequireUppercase = false;
+            options.Password.RequireLowercase = false;
         })
-        .AddRoles<ApplicationRole>()
-        .AddEntityFrameworkStores<ApplicationDbContext>();
-
-
+        .AddRoles<Role>()
+        .AddEntityFrameworkStores<ApplicationDbContext>()
+        .AddDefaultTokenProviders();
 
         services.AddScoped<MVP.Application.Interfaces.IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
-        services.Configure<MVP.Infrastructure.Configuration.SftpStorageOptions>(configuration.GetSection(MVP.Infrastructure.Configuration.SftpStorageOptions.SectionName));
+        services.Configure<MVP.Infrastructure.Configuration.SftpStorageOptions>(
+            configuration.GetSection(MVP.Infrastructure.Configuration.SftpStorageOptions.SectionName));
+        services.Configure<MVP.Infrastructure.Configuration.SmtpEmailOptions>(
+            configuration.GetSection(MVP.Infrastructure.Configuration.SmtpEmailOptions.SectionName));
+        services.Configure<MVP.Infrastructure.Configuration.AppOptions>(
+            configuration.GetSection(MVP.Infrastructure.Configuration.AppOptions.SectionName));
+
+        services.AddScoped<MVP.Application.Interfaces.IFileService, MVP.Infrastructure.Services.FileService>();
         services.AddScoped<MVP.Application.Interfaces.IFileStorageService, MVP.Infrastructure.Services.SftpStorageService>();
-        services.AddScoped<MVP.Application.Interfaces.IArchivoService, MVP.Infrastructure.Services.ArchivoService>();
-
-        services.Configure<MVP.Infrastructure.Configuration.SmtpEmailOptions>(configuration.GetSection(MVP.Infrastructure.Configuration.SmtpEmailOptions.SectionName));
         services.AddScoped<MVP.Application.Interfaces.IEmailService, MVP.Infrastructure.Services.SmtpEmailService>();
-
-        services.Configure<MVP.Infrastructure.Configuration.JwtOptions>(configuration.GetSection(MVP.Infrastructure.Configuration.JwtOptions.SectionName));
-        services.Configure<MVP.Infrastructure.Configuration.AppOptions>(configuration.GetSection(MVP.Infrastructure.Configuration.AppOptions.SectionName));
-
         services.AddScoped<MVP.Application.Interfaces.IIdentityService, MVP.Infrastructure.Services.IdentityService>();
         services.AddScoped<MVP.Application.Interfaces.IAuthService, MVP.Infrastructure.Services.AuthService>();
+        services.AddScoped<MVP.Application.Interfaces.Catalogos.IGenericCatalogService, MVP.Infrastructure.Services.Catalogos.GenericCatalogService>();
 
-        services.AddScoped<MVP.Application.Interfaces.Catalogos.IGenericCatalogService, Services.Catalogos.GenericCatalogService>();
-
-        var providerType = typeof(MVP.Application.Interfaces.Catalogos.ICatalogoProvider);
-        var implementations = typeof(DependencyInjection).Assembly.GetTypes()
+        var providerType = typeof(MVP.Application.Interfaces.Catalogos.ICatalogProvider);
+        var implementations = Assembly.GetExecutingAssembly().GetTypes()
             .Where(t => providerType.IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
 
         foreach (var implementation in implementations)
         {
             services.AddScoped(providerType, implementation);
         }
-
-        services.AddHttpClient("ExternalApi")
-            .AddStandardResilienceHandler();
-
-        services.AddHealthChecks()
-            .AddDbContextCheck<ApplicationDbContext>(name: "database", tags: ["db", "sql"]);
 
         services.AddHangfire(config => config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)

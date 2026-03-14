@@ -1,55 +1,43 @@
-using System;
-using System.Threading.Tasks;
-using Asp.Versioning;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 using MVP.Application.Interfaces;
-
 using MVP.WebAPI.Extensions;
+using System;
+using System.Threading.Tasks;
 
 namespace MVP.WebAPI.Controllers;
 
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
 [ApiController]
-[Authorize]
-public class FilesController(IArchivoService archivoService) : ControllerBase
+public class FilesController(IFileService fileService) : ControllerBase
 {
-    [HttpPost]
-    public async Task<IActionResult> Upload(IFormFile requestFile, [FromForm] string entidadTipo, [FromForm] string entidadId)
+    [HttpPost("upload")]
+    public async Task<IActionResult> Upload(IFormFile file, [FromQuery] string entityType, [FromQuery] string entityId)
     {
-        if (requestFile == null || requestFile.Length == 0)
-            return BadRequest(new { message = "El archivo está vacío o no fue enviado." });
+        if (file == null || file.Length == 0)
+            return BadRequest("No file uploaded.");
 
-        if (string.IsNullOrWhiteSpace(entidadTipo) || string.IsNullOrWhiteSpace(entidadId))
-            return BadRequest(new { message = "EntidadTipo y EntidadId son obligatorios." });
-
-        using var stream = requestFile.OpenReadStream();
-        var result = await archivoService.UploadArchivoAsync(
-            stream, 
-            requestFile.FileName, 
-            requestFile.ContentType, 
-            entidadTipo, 
-            entidadId);
-
+        using var stream = file.OpenReadStream();
+        var result = await fileService.UploadFileAsync(stream, file.FileName, file.ContentType, entityType, entityId);
+        
         return result.ToActionResult();
     }
 
-    [HttpGet("{uid}")]
-    public async Task<IActionResult> Download(Guid uid)
+    [HttpGet("download/{id}")]
+    public async Task<IActionResult> Download(Guid id)
     {
-        var result = await archivoService.DownloadArchivoAsync(uid);
-        if (!result.IsSuccess)
-            return result.ToActionResult();
+        var result = await fileService.DownloadFileAsync(id);
+        if (!result.IsSuccess) return result.ToActionResult();
 
         return File(result.Data!, "application/octet-stream");
     }
 
-    [HttpDelete("{uid}")]
-    public async Task<IActionResult> Delete(Guid uid)
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(Guid id)
     {
-        var result = await archivoService.SoftDeleteArchivoAsync(uid);
+        var result = await fileService.SoftDeleteFileAsync(id);
         return result.ToActionResult();
     }
 }

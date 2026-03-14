@@ -2,4 +2,10 @@ using System;
 
 namespace MVP.Application.DTOs;
 
-public record RolDTO(Guid? Id, string Name, string? Descripcion, int? TenantId);
+public class RolDTO
+{
+    public Guid? Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Descripcion { get; set; }
+    public Guid? TenantId { get; set; }
+}

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using MVP.Application.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MVP.Infrastructure.Persistence;
 
@@ -31,6 +32,10 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
 
         builder.UseNpgsql(connectionString);
 
-        return new ApplicationDbContext(builder.Options, new DesignTimeCurrentTenantService());
+        var services = new ServiceCollection();
+        services.AddSingleton<ICurrentTenantService, DesignTimeCurrentTenantService>();
+        var serviceProvider = services.BuildServiceProvider();
+
+        return new ApplicationDbContext(builder.Options, serviceProvider);
     }
 }

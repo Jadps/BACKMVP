@@ -23,7 +23,8 @@ public class AuthService(
     UserManager<ApplicationUser> userManager, 
     IOptions<JwtOptions> jwtOptions,
     IOptions<AppOptions> appOptions,
-    IBackgroundJobClient backgroundJobs) : IAuthService
+    IBackgroundJobClient backgroundJobs,
+    IApplicationDbContext context) : IAuthService
 {
     private readonly JwtOptions _jwt = jwtOptions.Value;
     private readonly AppOptions _app = appOptions.Value;
@@ -115,7 +116,11 @@ public class AuthService(
 
         if (user.TenantId.HasValue)
         {
-            authClaims.Add(new Claim("TenantId", user.TenantId.Value.ToString()));
+            var tenant = await context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Id == user.TenantId.Value);
+            if (tenant != null)
+            {
+                authClaims.Add(new Claim("TenantId", tenant.Uid.ToString()));
+            }
         }
 
         foreach (var userRole in userRoles)

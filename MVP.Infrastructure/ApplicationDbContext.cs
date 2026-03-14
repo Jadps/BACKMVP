@@ -4,6 +4,7 @@ using MVP.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using MVP.Application.Interfaces;
 using MVP.Infrastructure.Identity;
+using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -15,16 +16,18 @@ using MVP.Domain.Interfaces;
 namespace MVP.Infrastructure.Persistence;
 public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, int>, IApplicationDbContext
 {
-    private readonly int? _tenantId;
-    private readonly string? _userId;
+    private readonly IServiceProvider _serviceProvider;
 
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
-        ICurrentTenantService currentTenantService) : base(options) 
+        IServiceProvider serviceProvider) : base(options) 
     { 
-        _tenantId = currentTenantService.TenantId;
-        _userId = currentTenantService.UserId;
+        _serviceProvider = serviceProvider;
     }
+
+    private int? CurrentTenantId => _serviceProvider.GetService<ICurrentTenantService>()?.TenantId;
+    private string? CurrentUserId => _serviceProvider.GetService<ICurrentTenantService>()?.UserId;
+
 
     public DbSet<Modulo> Modulos => Set<Modulo>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
@@ -70,8 +73,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
 
             var auditEntry = new AuditEntry(entry);
             auditEntry.TableName = entry.Entity.GetType().Name;
-            auditEntry.UserId = _userId; 
-            auditEntry.TenantId = _tenantId;
+            auditEntry.UserId = CurrentUserId; 
+            auditEntry.TenantId = CurrentTenantId;
             auditEntries.Add(auditEntry);
 
             foreach (var property in entry.Properties)
@@ -148,6 +151,7 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         entity.ToTable("Modulos");
         entity.HasKey(e => e.Id);
+        entity.HasIndex(e => e.Uid).IsUnique();
         
         entity.HasOne(m => m.Padre)
               .WithMany(m => m.SubModulos)
@@ -171,6 +175,7 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 
     modelBuilder.Entity<ApplicationUser>(entity => {
         entity.ToTable("Usuarios");
+        entity.HasIndex(e => e.Uid).IsUnique();
         
         entity.HasOne(u => u.Tenant)
               .WithMany()
@@ -182,44 +187,51 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
               .HasForeignKey(ur => ur.UserId)
               .IsRequired();
 
-        entity.HasQueryFilter(u => !u.Borrado && (_tenantId == null || u.TenantId == _tenantId || u.TenantId == null));
+        entity.HasIndex(u => u.RefreshToken);
+
+        entity.HasQueryFilter(u => !u.Borrado && (CurrentTenantId == null || u.TenantId == CurrentTenantId || u.TenantId == null));
     });
     
     modelBuilder.Entity<Tenant>(entity => {
         entity.ToTable("Tenants");
         entity.HasKey(t => t.Id);
-        entity.HasQueryFilter(t => !t.Borrado && (_tenantId == null || t.Id == _tenantId));
+        entity.HasIndex(t => t.Uid).IsUnique();
+        entity.HasQueryFilter(t => !t.Borrado && (CurrentTenantId == null || t.Id == CurrentTenantId));
     });
     
     modelBuilder.Entity<ApplicationRole>(entity => {
         entity.ToTable("Roles");
+        entity.HasIndex(e => e.Uid).IsUnique();
         entity.HasOne(r => r.Tenant)
               .WithMany()
               .HasForeignKey(r => r.TenantId)
               .OnDelete(DeleteBehavior.Restrict);
 
-        entity.HasQueryFilter(r => !r.Borrado && (_tenantId == null || r.TenantId == _tenantId || r.TenantId == null));
+        entity.HasQueryFilter(r => !r.Borrado && (CurrentTenantId == null || r.TenantId == CurrentTenantId || r.TenantId == null));
     });
     modelBuilder.Entity<AuditLog>(entity => {
         entity.ToTable("AuditLogs");
         entity.HasKey(a => a.Id);
-        entity.HasQueryFilter(a => _tenantId == null || a.TenantId == _tenantId);
+        entity.HasIndex(a => a.Uid).IsUnique();
+        entity.HasQueryFilter(a => CurrentTenantId == null || a.TenantId == CurrentTenantId);
     });
 
     modelBuilder.Entity<Archivo>(entity => {
         entity.ToTable("Archivos");
         entity.HasKey(a => a.Id);
+        entity.HasIndex(a => a.Uid).IsUnique();
         entity.HasOne(a => a.Tenant)
               .WithMany()
               .HasForeignKey(a => a.TenantId)
               .OnDelete(DeleteBehavior.Restrict);
 
-        entity.HasQueryFilter(a => !a.Borrado && (_tenantId == null || a.TenantId == _tenantId || a.TenantId == null));
+        entity.HasQueryFilter(a => !a.Borrado && (CurrentTenantId == null || a.TenantId == CurrentTenantId || a.TenantId == null));
     });
 
     modelBuilder.Entity<Documento>(entity => {
         entity.ToTable("Documentos");
         entity.HasKey(d => d.Id);
+        entity.HasIndex(d => d.Uid).IsUnique();
         
         entity.HasOne(d => d.Archivo)
               .WithMany(a => a.Documentos)
@@ -231,7 +243,7 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
               .HasForeignKey(d => d.TenantId)
               .OnDelete(DeleteBehavior.Restrict);
 
-        entity.HasQueryFilter(d => !d.Borrado && (_tenantId == null || d.TenantId == _tenantId || d.TenantId == null));
+        entity.HasQueryFilter(d => !d.Borrado && (CurrentTenantId == null || d.TenantId == CurrentTenantId || d.TenantId == null));
     });
 
     modelBuilder.Entity<IdentityUserRole<int>>().ToTable("UsuariosRoles");

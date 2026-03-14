@@ -2,8 +2,10 @@ using System;
 
 namespace MVP.Application.DTOs;
 
-public record CatalogoItemDTO(
-    Guid Id,
-    string Descripcion,
-    string? Adicional = null,
-    string? Adicional2 = null);
+public class CatalogoItemDTO
+{
+    public Guid Id { get; init; }
+    public string Descripcion { get; init; } = string.Empty;
+    public string? Adicional { get; init; }
+    public string? Adicional2 { get; init; }
+}

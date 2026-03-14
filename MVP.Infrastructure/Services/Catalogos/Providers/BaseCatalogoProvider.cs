@@ -27,10 +27,11 @@ namespace MVP.Infrastructure.Services.Catalogos.Providers
             System.Linq.Expressions.Expression<System.Func<T, string>> nombreSelector)
         {
             var entities = await query.ToListAsync();
-            return entities.Select(x => new CatalogoItemDTO(
-                idSelector.Compile()(x),
-                nombreSelector.Compile()(x)
-            )).ToList();
+            return entities.Select(x => new CatalogoItemDTO
+            {
+                Id = idSelector.Compile()(x),
+                Descripcion = nombreSelector.Compile()(x)
+            }).ToList();
         }
     }
 }

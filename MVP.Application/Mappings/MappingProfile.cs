@@ -11,29 +11,40 @@ namespace MVP.Application.Mappings
         public MappingProfile()
         {
             CreateMap<Usuario, UsuarioDTO>()
-                .ForCtorParam("Id",       opt => opt.MapFrom(src => src.Uid))
-                .ForCtorParam("Password", opt => opt.MapFrom(src => (string?)null))
-                .ForCtorParam("Roles",    opt => opt.MapFrom(src => new List<RolDTO>()));
+                .ForMember(dest => dest.Id,       opt => opt.MapFrom(src => src.Uid))
+                .ForMember(dest => dest.TenantId, opt => opt.MapFrom(src => src.Tenant != null ? src.Tenant.Uid : (Guid?)null))
+                .ForMember(dest => dest.Password, opt => opt.Ignore())
+                .ForMember(dest => dest.Roles,    opt => opt.Ignore());
 
             CreateMap<UsuarioDTO, Usuario>()
-                .ForMember(dest => dest.Id,  opt => opt.Ignore())
-                .ForMember(dest => dest.Uid, opt => opt.MapFrom(src => src.Id));
+                .ForMember(dest => dest.Id,       opt => opt.Ignore())
+                .ForMember(dest => dest.Uid,      opt => opt.Ignore())
+                .ForMember(dest => dest.TenantId, opt => opt.Ignore());
 
             CreateMap<Rol, RolDTO>()
-                .ForCtorParam("Id", opt => opt.MapFrom(src => src.Uid));
+                .ForMember(dest => dest.Id,       opt => opt.MapFrom(src => src.Uid))
+                .ForMember(dest => dest.TenantId, opt => opt.MapFrom(src => src.Tenant != null ? src.Tenant.Uid : (Guid?)null));
 
             CreateMap<RolDTO, Rol>()
-                .ForMember(dest => dest.Id,  opt => opt.Ignore())
-                .ForMember(dest => dest.Uid, opt => opt.MapFrom(src => src.Id));
+                .ForMember(dest => dest.Id,       opt => opt.Ignore())
+                .ForMember(dest => dest.Uid,      opt => opt.Ignore())
+                .ForMember(dest => dest.TenantId, opt => opt.Ignore());
 
-            CreateMap<Modulo, ModuloDTO>();
+            CreateMap<Modulo, ModuloDTO>()
+                .ForMember(dest => dest.Id,      opt => opt.MapFrom(src => src.Uid))
+                .ForMember(dest => dest.PadreId, opt => opt.MapFrom(src => src.Padre != null ? src.Padre.Uid : (Guid?)null));
+
+            CreateMap<ModuloDTO, Modulo>()
+                .ForMember(dest => dest.Id,      opt => opt.Ignore())
+                .ForMember(dest => dest.Uid,     opt => opt.Ignore())
+                .ForMember(dest => dest.PadreId, opt => opt.Ignore());
 
             CreateMap<Tenant, TenantDTO>()
-                .ForCtorParam("Id", opt => opt.MapFrom(src => src.Uid));
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Uid));
 
             CreateMap<TenantDTO, Tenant>()
                 .ForMember(dest => dest.Id,  opt => opt.Ignore())
-                .ForMember(dest => dest.Uid, opt => opt.MapFrom(src => src.Id));
+                .ForMember(dest => dest.Uid, opt => opt.Ignore());
 
             CreateMap<OnboardingRequestDTO, Tenant>()
                 .ForMember(dest => dest.Nombre,        opt => opt.MapFrom(src => src.EmpresaNombre))

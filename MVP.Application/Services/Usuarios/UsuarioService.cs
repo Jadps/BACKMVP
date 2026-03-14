@@ -7,12 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace MVP.Application.Services.Usuarios;
 
 public class UsuarioService(
     IIdentityService identityService,
     ICurrentTenantService currentTenantService,
+    IApplicationDbContext context,
     IMapper mapper) : IUsuarioService
 {
     public async Task<List<UsuarioDTO>> GetTodosAsync()
@@ -29,7 +31,9 @@ public class UsuarioService(
                 .Select(id => mapper.Map<RolDTO>(rolesPorId[id]))
                 .ToList();
             
-            return dto with { NombreCompleto = user.NombreCompleto, Roles = roles };
+            dto.NombreCompleto = user.NombreCompleto;
+            dto.Roles = roles;
+            return dto;
         }).ToList();
     }
 
@@ -47,7 +51,9 @@ public class UsuarioService(
                 .Select(id => mapper.Map<RolDTO>(rolesPorId[id]))
                 .ToList();
             
-            return dto with { NombreCompleto = user.NombreCompleto, Roles = roles };
+            dto.NombreCompleto = user.NombreCompleto;
+            dto.Roles = roles;
+            return dto;
         }).ToList();
         
         return new PagedResult<UsuarioDTO>(dtos, result.TotalCount, pageNumber, pageSize);
@@ -67,7 +73,8 @@ public class UsuarioService(
         var dto = mapper.Map<UsuarioDTO>(user);
         var rolesDto = roles.Select(r => mapper.Map<RolDTO>(r)).ToList();
 
-        return ApplicationResult<UsuarioDTO>.Success(dto with { Roles = rolesDto });
+        dto.Roles = rolesDto;
+        return ApplicationResult<UsuarioDTO>.Success(dto);
     }
 
     public async Task<ApplicationResult<UsuarioDTO>> GetPerfilActualAsync()
@@ -84,11 +91,15 @@ public class UsuarioService(
         var usuario = mapper.Map<Usuario>(dto);
         usuario.UserName = dto.Email;
         
-        if (!currentTenantService.IsSuperAdmin)
+        if (dto.TenantId.HasValue)
         {
-            var currentTenantId = currentTenantService.TenantId;
-            if (currentTenantId.HasValue)
-                usuario.TenantId = currentTenantId.Value;
+            var tenant = await context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Uid == dto.TenantId.Value);
+            if (tenant == null) return ApplicationResult.Failure("El Tenant proporcionado no existe.", ErrorType.NotFound);
+            usuario.TenantId = tenant.Id;
+        }
+        else if (!currentTenantService.IsSuperAdmin)
+        {
+            usuario.TenantId = currentTenantService.TenantId;
         }
         
         var nombresRolesNuevos = await ObtenerNombresRolesAsync(dto.Roles);
@@ -105,6 +116,14 @@ public class UsuarioService(
             return ApplicationResult.Failure("El usuario que intentas actualizar no existe.", ErrorType.NotFound);
 
         mapper.Map(dto, user);
+        
+        if (dto.TenantId.HasValue)
+        {
+            var tenant = await context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Uid == dto.TenantId.Value);
+            if (tenant == null) return ApplicationResult.Failure("El Tenant proporcionado no existe.", ErrorType.NotFound);
+            user.TenantId = tenant.Id;
+        }
+
         var nombresRolesNuevos = await ObtenerNombresRolesAsync(dto.Roles);
         return await identityService.ActualizarUsuarioAsync(user, nombresRolesNuevos);
     }

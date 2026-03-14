@@ -3,13 +3,15 @@ using System.Collections.Generic;
 
 namespace MVP.Application.DTOs;
 
-public record UsuarioDTO(
-    Guid? Id,
-    string Email,
-    string Nombre,
-    string PrimerApellido,
-    string? SegundoApellido,
-    string? Password,
-    int? TenantId,
-    List<RolDTO> Roles,
-    string? NombreCompleto);
+public class UsuarioDTO
+{
+    public Guid? Id { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string Nombre { get; set; } = string.Empty;
+    public string PrimerApellido { get; set; } = string.Empty;
+    public string? SegundoApellido { get; set; }
+    public string? Password { get; set; }
+    public Guid? TenantId { get; set; }
+    public List<RolDTO> Roles { get; set; } = new();
+    public string? NombreCompleto { get; set; }
+}

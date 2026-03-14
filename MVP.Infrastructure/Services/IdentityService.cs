@@ -17,7 +17,7 @@ namespace MVP.Infrastructure.Services;
 public class IdentityService(
     UserManager<ApplicationUser> userManager,
     RoleManager<ApplicationRole> roleManager,
-    ApplicationDbContext context,
+    IApplicationDbContext context,
     IMapper mapper) : IIdentityService
 {
     public async Task<List<Usuario>> GetUsuariosActivosAsync()
@@ -25,6 +25,7 @@ public class IdentityService(
         var appUsers = await userManager.Users
             .Where(u => !u.Borrado)
             .Include(u => u.UserRoles)
+            .Include(u => u.Tenant)
             .ToListAsync();
         return mapper.Map<List<Usuario>>(appUsers);
     }
@@ -36,6 +37,7 @@ public class IdentityService(
 
         var items = await query
             .Include(u => u.UserRoles)
+            .Include(u => u.Tenant)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -47,8 +49,10 @@ public class IdentityService(
     {
         var appUser = await userManager.Users
             .Include(u => u.UserRoles)
+            .Include(u => u.Tenant)
             .FirstOrDefaultAsync(u => u.Uid == uid && !u.Borrado);
-        return mapper.Map<Usuario>(appUser);
+        
+        return appUser == null ? null : mapper.Map<Usuario>(appUser);
     }
 
     public async Task<ApplicationResult> CrearUsuarioAsync(Usuario usuario, string password, List<string> rolesNombres)
@@ -138,6 +142,7 @@ public class IdentityService(
     public async Task<List<Rol>> GetRolesByIdsAsync(IEnumerable<int> roleIds)
     {
         var roles = await roleManager.Roles
+            .Include(r => r.Tenant)
             .Where(r => roleIds.Contains(r.Id))
             .ToListAsync();
         return mapper.Map<List<Rol>>(roles);
@@ -146,6 +151,7 @@ public class IdentityService(
     public async Task<List<Rol>> GetRolesByUidsAsync(IEnumerable<Guid> roleUids)
     {
         var roles = await roleManager.Roles
+            .Include(r => r.Tenant)
             .Where(r => roleUids.Contains(r.Uid))
             .ToListAsync();
         return mapper.Map<List<Rol>>(roles);
@@ -154,6 +160,7 @@ public class IdentityService(
     public async Task<List<Rol>> GetRolesActivosAsync()
     {
         var roles = await roleManager.Roles
+            .Include(r => r.Tenant)
             .Where(r => !r.Borrado)
             .ToListAsync();
         return mapper.Map<List<Rol>>(roles);

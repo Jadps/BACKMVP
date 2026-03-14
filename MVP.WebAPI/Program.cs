@@ -14,6 +14,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using Hangfire;
 using FluentValidation;
+using System.IdentityModel.Tokens.Jwt;
+
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -102,6 +105,7 @@ app.UseCors();
 app.UseOutputCache();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<TenantResolverMiddleware>();
 app.UseRateLimiter();
 
 app.Use(async (context, next) =>

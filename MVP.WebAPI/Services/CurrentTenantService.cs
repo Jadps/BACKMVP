@@ -1,7 +1,11 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.EntityFrameworkCore;
 using MVP.Application.Interfaces;
 using MVP.Domain.Constants;
 using System.Security.Claims;
+using System;
+using System.Linq;
 
 namespace MVP.WebAPI.Services;
 
@@ -20,14 +24,7 @@ public class CurrentTenantService : ICurrentTenantService
         get
         {
             if (IsSuperAdmin) return null;
-            if (_tenantId.HasValue) return _tenantId.Value;
-
-            var tenantClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("TenantId")?.Value;
-            if (int.TryParse(tenantClaim, out int tenantId))
-            {
-                return tenantId;
-            }
-            return null;
+            return _tenantId;
         }
     }
 

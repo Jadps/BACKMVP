@@ -5,6 +5,7 @@ namespace MVP.Domain.Entities;
 public class AuditLog
 {
     public int Id { get; set; }
+    public Guid Uid { get; set; } = Guid.NewGuid();
     public string? UserId { get; set; }
     public int? TenantId { get; set; }
     public string Type { get; set; } = string.Empty;

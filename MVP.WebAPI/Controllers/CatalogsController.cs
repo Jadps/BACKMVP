@@ -6,7 +6,6 @@ using MVP.Application.Interfaces.Catalogos;
 using MVP.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using MVP.WebAPI.Extensions;
-using Microsoft.AspNetCore.OutputCaching;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -20,7 +19,6 @@ public class CatalogsController(
     IGenericCatalogService genericService) : ControllerBase
 {
     [HttpGet("roles")]
-    [OutputCache(Duration = 3600)]
     public async Task<IActionResult> GetRoles() 
     {
         var result = await catalogService.GetRolesAsync();
@@ -36,7 +34,7 @@ public class CatalogsController(
     }
 
     [HttpGet("modules")]
-    [OutputCache(Duration = 3600)]
+    [Authorize]
     public async Task<IActionResult> GetModules()
     {
         var result = await catalogService.GetMenuModulesAsync();
@@ -44,6 +42,7 @@ public class CatalogsController(
     }
 
     [HttpGet("c/{name}")]
+    [Authorize]
     public async Task<IActionResult> GetGeneric(string name)
     {
         var items = await genericService.GetCatalogAsync(name);
@@ -51,6 +50,7 @@ public class CatalogsController(
     }
 
     [HttpGet("tenants")]
+    [Authorize]
     public async Task<IActionResult> GetTenants()
     {
         var items = await genericService.GetCatalogAsync("Tenants");

@@ -37,7 +37,7 @@ builder.Services.AddApiVersioning(options =>
 .AddMvc();
 
 builder.Services.AddMemoryCache();
-builder.Services.AddOutputCache();
+builder.Services.AddHybridCache();
 builder.Services.AddControllers();
 
 builder.Services.AddAntiforgery(options => 
@@ -105,7 +105,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors();
-app.UseOutputCache();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<TenantResolverMiddleware>();

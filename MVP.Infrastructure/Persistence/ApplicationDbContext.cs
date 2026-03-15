@@ -28,6 +28,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, int>, IApplica
     private string? CurrentUserId => _serviceProvider.GetService<ICurrentTenantService>()?.UserId;
 
     public DbSet<Module> Modules => Set<Module>();
+    public DbSet<RoleModule> RoleModules => Set<RoleModule>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<FileEntity> Files => Set<FileEntity>();

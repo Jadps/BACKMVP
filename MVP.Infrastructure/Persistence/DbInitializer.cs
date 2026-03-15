@@ -55,10 +55,12 @@ public static class DbInitializer
         {
             var baseModules = new List<Module>
             {
-                new() { Uid = Guid.NewGuid(), Description = "Dashboard", Action = "/dashboard", Icon = "pi pi-home", Order = 1, ModuleTypeId = 1 },
-                new() { Uid = Guid.NewGuid(), Description = "Companies", Action = "/tenants", Icon = "pi pi-building", Order = 2, ModuleTypeId = 1 },
-                new() { Uid = Guid.NewGuid(), Description = "Users", Action = "/users", Icon = "pi pi-users", Order = 3, ModuleTypeId = 1 },
-                new() { Uid = Guid.NewGuid(), Description = "Roles & Permissions", Action = "/roles", Icon = "pi pi-id-card", Order = 4, ModuleTypeId = 1 }
+                new() { Uid = Guid.NewGuid(), Description = "Dashboard", Action = "/dashboard", Icon = "pi pi-home", Order = 1, ModuleTypeId = 1},
+                new() { Uid = Guid.NewGuid(), Description = "Administration", Action = "/administration", Icon = "pi pi-cog", Order = 2, ModuleTypeId = 1},
+                new() { Uid = Guid.NewGuid(), Description = "Companies", Action = "/tenants", Icon = "pi pi-building", Order = 1, ModuleTypeId = 2, ParentId = 2},
+                new() { Uid = Guid.NewGuid(), Description = "Users", Action = "/users", Icon = "pi pi-users", Order = 2, ModuleTypeId = 2, ParentId = 2},
+                new() { Uid = Guid.NewGuid(), Description = "Roles & Permissions", Action = "/roles", Icon = "pi pi-id-card", Order = 3, ModuleTypeId = 2, ParentId = 2},
+                new() { Uid = Guid.NewGuid(), Description = "Contracts", Action = "/contracts", Icon = "pi pi-file", Order = 4, ModuleTypeId = 1, IsProduction = false}
             };
             context.Modules.AddRange(baseModules);
             await context.SaveChangesAsync();

@@ -13,7 +13,8 @@ namespace MVP.Infrastructure.Services;
 public class IdentityService(
     UserManager<User> userManager,
     RoleManager<Role> roleManager,
-    IApplicationDbContext context) : IIdentityService
+    IApplicationDbContext context,
+    Microsoft.Extensions.Caching.Hybrid.HybridCache cache) : IIdentityService
 {
     public async Task<List<User>> GetActiveUsersAsync()
     {
@@ -110,6 +111,7 @@ public class IdentityService(
                     await userManager.AddToRolesAsync(existingUser, roleNames);
 
                 await transaction.CommitAsync();
+                await cache.RemoveByTagAsync($"user_{existingUser.Uid}_menu");
                 return ApplicationResult.Success();
             }
 

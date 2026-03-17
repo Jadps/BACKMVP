@@ -29,11 +29,13 @@ public class AuthService(
 
     public async Task<ApplicationResult<AuthResponseDto>> LoginAsync(LoginDto model)
     {
-        var user = await userManager.FindByNameAsync(model.Email);
+        var user = await userManager.Users
+            .Include(u => u.Tenant)
+            .FirstOrDefaultAsync(u => u.NormalizedUserName == userManager.NormalizeName(model.Email));
         
         if (user != null && !user.IsDeleted && await userManager.CheckPasswordAsync(user, model.Password))
         {
-            return ApplicationResult<AuthResponseDto>.Success(await GenerateAndAssignTokensAsync(user));
+            return ApplicationResult<AuthResponseDto>.Success(await GenerateAndAssignTokensAsync(user, isRefresh: false));
         }
         return ApplicationResult<AuthResponseDto>.Failure("Invalid email or password.", ErrorType.Unauthorized);
     }
@@ -55,14 +57,16 @@ public class AuthService(
 
     public async Task<ApplicationResult<AuthResponseDto>> RefreshTokenAsync(RefreshTokenRequestDto model)
     {
-        var user = await userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == model.RefreshToken);
+        var user = await userManager.Users
+            .Include(u => u.Tenant)
+            .FirstOrDefaultAsync(u => u.RefreshToken == model.RefreshToken);
         
         if (user == null || user.IsDeleted || user.RefreshTokenExpiration <= DateTime.UtcNow)
         {
             return ApplicationResult<AuthResponseDto>.Failure("Invalid or expired Refresh Token.", ErrorType.Unauthorized);
         }
 
-        return ApplicationResult<AuthResponseDto>.Success(await GenerateAndAssignTokensAsync(user));
+        return ApplicationResult<AuthResponseDto>.Success(await GenerateAndAssignTokensAsync(user, isRefresh: true));
     }
 
     public async Task<ApplicationResult> ForgotPasswordAsync(ForgotPasswordDto model)
@@ -101,7 +105,7 @@ public class AuthService(
         return ApplicationResult.Success();
     }
 
-    private async Task<AuthResponseDto> GenerateAndAssignTokensAsync(User user)
+    private async Task<AuthResponseDto> GenerateAndAssignTokensAsync(User user, bool isRefresh)
     {
         var userRoles = await userManager.GetRolesAsync(user);
 
@@ -112,13 +116,9 @@ public class AuthService(
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        if (user.TenantId.HasValue)
+        if (user.TenantId.HasValue && user.Tenant != null)
         {
-            var tenant = await context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Id == user.TenantId.Value);
-            if (tenant != null)
-            {
-                authClaims.Add(new Claim("TenantId", tenant.Uid.ToString()));
-            }
+            authClaims.Add(new Claim("TenantId", user.Tenant.Uid.ToString()));
         }
 
         foreach (var userRole in userRoles)
@@ -144,7 +144,12 @@ public class AuthService(
 
         var refreshToken = Guid.NewGuid().ToString();
         user.RefreshToken = refreshToken;
-        user.RefreshTokenExpiration = DateTime.UtcNow.AddDays(7);
+        
+        if (!isRefresh)
+        {
+            user.RefreshTokenExpiration = DateTime.UtcNow.AddDays(7);
+        }
+
         await userManager.UpdateAsync(user);
 
         return new AuthResponseDto(

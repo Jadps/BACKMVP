@@ -18,6 +18,7 @@ public class UsersController(
     IUserService service, 
     ICurrentTenantService currentTenantService) : ControllerBase
 {
+    [Authorize]
     [HttpGet]
     public async Task<IActionResult> Get([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10) 
     {
@@ -25,13 +26,14 @@ public class UsersController(
         return result.ToActionResult();
     }
 
+    [Authorize]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
         var result = await service.GetByUidAsync(id);
         return result.ToActionResult();
     }
-
+    [Authorize]
     [HttpGet("me")]
     public async Task<IActionResult> GetMe()
     {

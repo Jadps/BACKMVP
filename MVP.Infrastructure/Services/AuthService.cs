@@ -21,8 +21,7 @@ public class AuthService(
     UserManager<User> userManager, 
     IOptions<JwtOptions> jwtOptions,
     IOptions<AppOptions> appOptions,
-    IBackgroundJobClient backgroundJobs,
-    IApplicationDbContext context) : IAuthService
+    IBackgroundJobClient backgroundJobs) : IAuthService
 {
     private readonly JwtOptions _jwt = jwtOptions.Value;
     private readonly AppOptions _app = appOptions.Value;

@@ -114,7 +114,13 @@ public static class DbInitializer
                 CatStatusAccountId = 1
             };
 
-            var result = await userManager.CreateAsync(appUser, "Sgedi.2024!");
+            var adminPassword = Environment.GetEnvironmentVariable("AdminInitialPassword");
+            if (string.IsNullOrEmpty(adminPassword))
+            {
+                adminPassword = "Sgedi.2024!"; 
+            }
+
+            var result = await userManager.CreateAsync(appUser, adminPassword);
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(appUser, "Admin");

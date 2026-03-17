@@ -105,7 +105,7 @@ app.UseForwardedHeaders();
 app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || Environment.GetEnvironmentVariable("RUN_SEEDER") == "true")  
 {
     await app.Services.InitialiseDatabaseAsync();
     app.MapOpenApi().AllowAnonymous();

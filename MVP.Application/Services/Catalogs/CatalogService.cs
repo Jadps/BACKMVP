@@ -4,14 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
 using MVP.Application.DTOs;
 using MVP.Application.Interfaces;
-using MVP.Application.Interfaces.Catalogos;
+using MVP.Application.Interfaces.Catalogs;
 using MVP.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MVP.Application.Services.Catalogos;
+namespace MVP.Application.Services.Catalogs;
 
 public class CatalogService(
     IIdentityService identityService,

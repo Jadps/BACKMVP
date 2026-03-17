@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MVP.Infrastructure.Services.Catalogos.Providers;
+namespace MVP.Infrastructure.Services.Catalogs.Providers;
 
 public class TenantCatalogProvider(IApplicationDbContext context) : BaseCatalogProvider
 {

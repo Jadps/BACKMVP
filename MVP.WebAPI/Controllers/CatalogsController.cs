@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 using MVP.Application.DTOs;
 using MVP.Application.Interfaces;
-using MVP.Application.Interfaces.Catalogos;
+using MVP.Application.Interfaces.Catalogs;
 using MVP.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using MVP.WebAPI.Extensions;

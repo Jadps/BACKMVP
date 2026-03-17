@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MVP.Application.DTOs;
-using MVP.Application.Interfaces.Catalogos;
+using MVP.Application.Interfaces.Catalogs;
 
-namespace MVP.Infrastructure.Services.Catalogos;
+namespace MVP.Infrastructure.Services.Catalogs;
 
 public class GenericCatalogService(IEnumerable<ICatalogProvider> providers) : IGenericCatalogService
 {

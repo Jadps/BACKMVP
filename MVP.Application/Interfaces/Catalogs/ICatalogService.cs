@@ -1,9 +1,10 @@
 using MVP.Application.DTOs;
+using MVP.Application.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace MVP.Application.Interfaces.Catalogos;
+namespace MVP.Application.Interfaces.Catalogs;
 
 public interface ICatalogService
 {

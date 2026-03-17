@@ -47,9 +47,9 @@ public static class DependencyInjection
         services.AddScoped<MVP.Application.Interfaces.IEmailService, MVP.Infrastructure.Services.SmtpEmailService>();
         services.AddScoped<MVP.Application.Interfaces.IIdentityService, MVP.Infrastructure.Services.IdentityService>();
         services.AddScoped<MVP.Application.Interfaces.IAuthService, MVP.Infrastructure.Services.AuthService>();
-        services.AddScoped<MVP.Application.Interfaces.Catalogos.IGenericCatalogService, MVP.Infrastructure.Services.Catalogos.GenericCatalogService>();
+        services.AddScoped<MVP.Application.Interfaces.Catalogs.IGenericCatalogService, MVP.Infrastructure.Services.Catalogs.GenericCatalogService>();
 
-        var providerType = typeof(MVP.Application.Interfaces.Catalogos.ICatalogProvider);
+        var providerType = typeof(MVP.Application.Interfaces.Catalogs.ICatalogProvider);
         var implementations = Assembly.GetExecutingAssembly().GetTypes()
             .Where(t => providerType.IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
 

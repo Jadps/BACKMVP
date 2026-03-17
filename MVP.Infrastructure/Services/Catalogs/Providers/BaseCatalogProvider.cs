@@ -5,9 +5,9 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using MVP.Application.DTOs;
-using MVP.Application.Interfaces.Catalogos;
+using MVP.Application.Interfaces.Catalogs;
 
-namespace MVP.Infrastructure.Services.Catalogos.Providers;
+namespace MVP.Infrastructure.Services.Catalogs.Providers;
 
 public abstract class BaseCatalogProvider : ICatalogProvider
 {

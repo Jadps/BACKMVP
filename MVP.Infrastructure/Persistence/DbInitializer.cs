@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using MVP.Domain.Entities;
+using MVP.Domain.Constants;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -66,12 +67,12 @@ public static class DbInitializer
             await context.SaveChangesAsync();
         }
 
-        var adminRole = await roleManager.FindByNameAsync("Admin");
+        var adminRole = await roleManager.FindByNameAsync(AppRoles.GlobalAdmin);
         if (adminRole == null)
         {
             adminRole = new()
             { 
-                Name = "Admin", 
+                Name = AppRoles.GlobalAdmin, 
                 TenantId = null, 
                 Uid = Guid.NewGuid(),
                 IsDeleted = false
@@ -79,19 +80,45 @@ public static class DbInitializer
             await roleManager.CreateAsync(adminRole);
         }
 
+        var userRole = await roleManager.FindByNameAsync(AppRoles.User);
+        if (userRole == null)
+        {
+            userRole = new()
+            {
+                Name = AppRoles.User,
+                TenantId = null,
+                Uid = Guid.NewGuid(),
+                IsDeleted = false
+            };
+            await roleManager.CreateAsync(userRole);
+        }
+
         var modulesDb = await context.Modules.ToListAsync();
         foreach (var module in modulesDb)
         {
-            var permissionExists = await context.Set<RoleModule>()
+            var adminPermissionExists = await context.Set<RoleModule>()
                 .AnyAsync(rm => rm.RoleId == adminRole.Id && rm.ModuleId == module.Id);
 
-            if (!permissionExists)
+            if (!adminPermissionExists)
             {
                 context.Set<RoleModule>().Add(new()
                 {
                     RoleId = adminRole.Id,
                     ModuleId = module.Id,
                     Permission = PermissionLevel.Admin
+                });
+            }
+
+            var userPermissionExists = await context.Set<RoleModule>()
+                .AnyAsync(rm => rm.RoleId == userRole.Id && rm.ModuleId == module.Id);
+
+            if (!userPermissionExists)
+            {
+                context.Set<RoleModule>().Add(new()
+                {
+                    RoleId = userRole.Id,
+                    ModuleId = module.Id,
+                    Permission = PermissionLevel.Read
                 });
             }
         }
@@ -123,7 +150,30 @@ public static class DbInitializer
             var result = await userManager.CreateAsync(appUser, adminPassword);
             if (result.Succeeded)
             {
-                await userManager.AddToRoleAsync(appUser, "Admin");
+                await userManager.AddToRoleAsync(appUser, AppRoles.GlobalAdmin);
+            }
+        }
+
+        if (await userManager.FindByEmailAsync("demo@mail.com") == null)
+        {
+            var demoUser = new User
+            {
+                UserName = "demo@mail.com",
+                Email = "demo@mail.com",
+                FirstName = "Demo",
+                LastName = "User",
+                FriendlyName = "Demo",
+                TenantId = tenant.Id,
+                EmailConfirmed = true,
+                Uid = Guid.NewGuid(),
+                IsDeleted = false,
+                CatStatusAccountId = 1
+            };
+
+            var result = await userManager.CreateAsync(demoUser, "Demo.2026!");
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(demoUser, AppRoles.User);
             }
         }
     }

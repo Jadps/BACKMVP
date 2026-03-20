@@ -13,7 +13,7 @@ using MVP.Domain.Interfaces;
 
 namespace MVP.Infrastructure.Persistence;
 
-public class ApplicationDbContext : IdentityDbContext<User, Role, int>, IApplicationDbContext
+public class ApplicationDbContext : IdentityDbContext<User, Role, int>
 {
     private readonly IServiceProvider _serviceProvider;
 

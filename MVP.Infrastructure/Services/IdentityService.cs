@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MVP.Application.Interfaces;
 using MVP.Domain.Entities;
+using MVP.Infrastructure.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,7 @@ namespace MVP.Infrastructure.Services;
 public class IdentityService(
     UserManager<User> userManager,
     RoleManager<Role> roleManager,
-    IApplicationDbContext context,
+    ApplicationDbContext context,
     Microsoft.Extensions.Caching.Hybrid.HybridCache cache) : IIdentityService
 {
     public async Task<List<User>> GetActiveUsersAsync()

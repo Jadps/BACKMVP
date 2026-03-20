@@ -1,5 +1,6 @@
 using MVP.Application.DTOs;
 using MVP.Application.Interfaces;
+using MVP.Application.Interfaces.Repositories;
 using MVP.Domain.Constants;
 using MVP.Domain.Entities;
 using System;
@@ -11,13 +12,14 @@ using Hangfire;
 namespace MVP.Application.Services;
 
 public class OnboardingService(
-    IApplicationDbContext context, 
+    IUnitOfWork unitOfWork,
+    ITenantRepository tenantRepository,
     IIdentityService identityService, 
     IBackgroundJobClient backgroundJobs) : IOnboardingService
 {
     public async Task<ApplicationResult> RegisterNewTenantAsync(OnboardingRequestDto request)
     {
-        using var transaction = await context.BeginTransactionAsync();
+        await unitOfWork.BeginTransactionAsync();
         try
         {
             if (!await identityService.RoleExistsAsync(AppRoles.TenantAdmin))
@@ -32,8 +34,8 @@ public class OnboardingService(
                 CreatedAt = DateTime.UtcNow,
                 IsDeleted = false
             };
-            await context.Tenants.AddAsync(tenant);
-            await context.SaveChangesAsync();
+            await tenantRepository.AddAsync(tenant);
+            await unitOfWork.SaveChangesAsync();
 
             var adminUser = new User
             {
@@ -50,11 +52,11 @@ public class OnboardingService(
             var userResult = await identityService.CreateUserAsync(adminUser, request.AdminPassword, new List<string> { AppRoles.TenantAdmin });
             if (!userResult.IsSuccess)
             {
-                await transaction.RollbackAsync();
+                await unitOfWork.RollbackTransactionAsync();
                 return userResult;
             }
 
-            await transaction.CommitAsync();
+            await unitOfWork.CommitTransactionAsync();
 
             backgroundJobs.Enqueue<IEmailService>(emailService => 
                 emailService.SendWelcomeEmailAsync(adminUser.Email!, adminUser.FirstName));
@@ -63,7 +65,7 @@ public class OnboardingService(
         }
         catch (Exception)
         {
-            await transaction.RollbackAsync();
+            await unitOfWork.RollbackTransactionAsync();
             throw;
         }
     }

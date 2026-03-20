@@ -1,10 +1,9 @@
 using AutoMapper;
-using AutoMapper.QueryableExtensions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
 using MVP.Application.DTOs;
 using MVP.Application.Interfaces;
 using MVP.Application.Interfaces.Catalogs;
+using MVP.Application.Interfaces.Repositories;
 using MVP.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -17,7 +16,7 @@ public class CatalogService(
     IIdentityService identityService,
     ICurrentTenantService currentTenantService,
     IMapper mapper, 
-    IApplicationDbContext context,
+    ICatalogRepository catalogRepository,
     HybridCache cache) : ICatalogService
 {
     private const string RolesCacheKey = "global_roles";
@@ -74,12 +73,7 @@ public class CatalogService(
             cacheKey,
             async cancelToken =>
             {
-                var modules = await context.Modules
-                    .AsNoTracking()
-                    .Include(m => m.SubModules.Where(sm => sm.IsProduction).OrderBy(sm => sm.Order))
-                    .Where(x => x.IsProduction)
-                    .OrderBy(m => m.Order)
-                    .ToListAsync(cancelToken);
+                var modules = await catalogRepository.GetActiveModulesWithSubModulesAsync(cancelToken);
 
                 if (currentTenantService.IsSuperAdmin)
                 {
@@ -97,16 +91,7 @@ public class CatalogService(
                         .ToList();
                 }
 
-                var allowedModuleIds = await context.Users
-                    .AsNoTracking()
-                    .Where(u => u.Uid == userUid)
-                    .Join(context.UserRoles, u => u.Id, ur => ur.UserId, (u, ur) => ur.RoleId)
-                    .Join(context.Roles, roleId => roleId, r => r.Id, (roleId, r) => r)
-                    .SelectMany(r => r.RoleModules)
-                    .Where(rm => rm.Permission > PermissionLevel.None)
-                    .Select(rm => rm.ModuleId)
-                    .Distinct()
-                    .ToListAsync(cancelToken);
+                var allowedModuleIds = await catalogRepository.GetAllowedModuleIdsForUserAsync(userUid, cancelToken);
 
                 return modules
                     .Where(m => m.ParentId == null && allowedModuleIds.Contains(m.Id))

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.EntityFrameworkCore;
 using MVP.Application.Interfaces;
+using MVP.Application.Interfaces.Repositories;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -10,7 +10,7 @@ namespace MVP.WebAPI.Middleware;
 
 public class TenantResolverMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext context, ICurrentTenantService currentTenantService, IMemoryCache cache, IApplicationDbContext dbContext)
+    public async Task InvokeAsync(HttpContext context, ICurrentTenantService currentTenantService, IMemoryCache cache, ITenantRepository tenantRepository)
     {
         if (context.User.Identity?.IsAuthenticated == true)
         {
@@ -20,11 +20,7 @@ public class TenantResolverMiddleware(RequestDelegate next)
                 var cacheKey = $"tenant_id_{tenantUid}";
                 if (!cache.TryGetValue(cacheKey, out int tenantId))
                 {
-                    var tenant = await dbContext.Tenants
-                        .AsNoTracking()
-                        .Where(t => t.Uid == tenantUid)
-                        .Select(t => new { t.Id })
-                        .FirstOrDefaultAsync();
+                    var tenant = await tenantRepository.GetByUidAsync(tenantUid);
 
                     if (tenant != null)
                     {

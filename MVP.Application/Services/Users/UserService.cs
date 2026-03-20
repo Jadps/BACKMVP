@@ -1,20 +1,20 @@
 using AutoMapper;
 using MVP.Application.DTOs;
 using MVP.Application.Interfaces;
+using MVP.Application.Interfaces.Repositories;
 using MVP.Application.Interfaces.Users;
 using MVP.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 
 namespace MVP.Application.Services.Users;
 
 public class UserService(
     IIdentityService identityService,
     ICurrentTenantService currentTenantService,
-    IApplicationDbContext context,
+    ITenantRepository tenantRepository,
     IMapper mapper) : IUserService
 {
     public async Task<ApplicationResult<List<UserDto>>> GetAllActiveAsync()
@@ -85,7 +85,7 @@ public class UserService(
         
         if (dto.TenantId.HasValue)
         {
-            var tenant = await context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Uid == dto.TenantId.Value);
+            var tenant = await tenantRepository.GetByUidAsync(dto.TenantId.Value);
             if (tenant == null) return ApplicationResult.Failure("Provided Tenant does not exist.", ErrorType.NotFound);
             user.TenantId = tenant.Id;
         }
@@ -116,7 +116,7 @@ public class UserService(
         
         if (dto.TenantId.HasValue)
         {
-            var tenant = await context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Uid == dto.TenantId.Value);
+            var tenant = await tenantRepository.GetByUidAsync(dto.TenantId.Value);
             if (tenant == null) return ApplicationResult.Failure("Provided Tenant does not exist.", ErrorType.NotFound);
             updateInfo.TenantId = tenant.Id;
         }

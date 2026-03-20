@@ -9,6 +9,8 @@ using MVP.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Hangfire;
 using Hangfire.PostgreSql;
+using MVP.Application.Interfaces.Repositories;
+using MVP.Infrastructure.Repositories;
 
 namespace MVP.Infrastructure;
 
@@ -33,7 +35,7 @@ public static class DependencyInjection
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
 
-        services.AddScoped<MVP.Application.Interfaces.IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
+        services.AddScoped<MVP.Application.Interfaces.IUnitOfWork, UnitOfWork>();
 
         services.Configure<MVP.Infrastructure.Configuration.SftpStorageOptions>(
             configuration.GetSection(MVP.Infrastructure.Configuration.SftpStorageOptions.SectionName));
@@ -48,6 +50,9 @@ public static class DependencyInjection
         services.AddScoped<MVP.Application.Interfaces.IIdentityService, MVP.Infrastructure.Services.IdentityService>();
         services.AddScoped<MVP.Application.Interfaces.IAuthService, MVP.Infrastructure.Services.AuthService>();
         services.AddScoped<MVP.Application.Interfaces.Catalogs.IGenericCatalogService, MVP.Infrastructure.Services.Catalogs.GenericCatalogService>();
+        services.AddScoped<ICatalogRepository, CatalogRepository>();
+        services.AddScoped<ITenantRepository, TenantRepository>();
+
 
         var providerType = typeof(MVP.Application.Interfaces.Catalogs.ICatalogProvider);
         var implementations = Assembly.GetExecutingAssembly().GetTypes()

@@ -28,9 +28,11 @@ public class AuthController(IAuthService authService) : ControllerBase
         {
             Response.AppendSecureCookie("AccessToken", result.Data.Token, result.Data.Expiration);
             Response.AppendSecureCookie("RefreshToken", result.Data.RefreshToken, DateTime.UtcNow.AddDays(7));
+
+            return Ok(new { message = "Successfully login" });
         }
 
-        return result.ToActionResult();
+        return Unauthorized(result.ErrorMessage);
     }
 
     [Authorize]
@@ -45,6 +47,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         {
             Response.DeleteSecureCookie("AccessToken");
             Response.DeleteSecureCookie("RefreshToken");
+            return Ok(new { message = "Successfully logged out" });
         }
 
         return result.ToActionResult();
@@ -57,7 +60,7 @@ public class AuthController(IAuthService authService) : ControllerBase
     public async Task<IActionResult> RefreshToken()
     {
         var refreshToken = Request.Cookies["RefreshToken"];
-        
+
         if (string.IsNullOrEmpty(refreshToken))
             return Unauthorized(new { message = "Refresh token not found in cookies." });
 
@@ -68,6 +71,8 @@ public class AuthController(IAuthService authService) : ControllerBase
         {
             Response.AppendSecureCookie("AccessToken", result.Data.Token, result.Data.Expiration);
             Response.AppendSecureCookie("RefreshToken", result.Data.RefreshToken, DateTime.UtcNow.AddDays(7));
+
+            return Ok(new { message = "Token refreshed successfully" });
         }
 
         return result.ToActionResult();

@@ -33,6 +33,14 @@ public class CatalogsController(
         return result.ToActionResult();
     }
 
+    [HttpPut("roles")]
+    [Authorize(Roles = AppRoles.GlobalAdmin)]
+    public async Task<IActionResult> PutRole(RoleDto dto)
+    {
+        var result = await catalogService.UpdateRoleAsync(dto);
+        return result.ToActionResult();
+    }
+
     [HttpGet("modules")]
     [Authorize]
     public async Task<IActionResult> GetModules()

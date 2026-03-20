@@ -10,5 +10,6 @@ public interface ICatalogService
 {
     Task<ApplicationResult<List<RoleDto>>> GetRolesAsync();
     Task<ApplicationResult> CreateRoleAsync(RoleDto dto);
+    Task<ApplicationResult> UpdateRoleAsync(RoleDto dto);
     Task<ApplicationResult<List<ModuleDto>>> GetMenuModulesAsync();
 }

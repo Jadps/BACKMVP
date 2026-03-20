@@ -8,4 +8,5 @@ public class RoleDto
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public Guid? TenantId { get; set; }
+    public List<RolePermissionDto> Permissions { get; set; } = new();
 }

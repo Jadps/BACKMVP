@@ -10,6 +10,7 @@ public class Tenant : ISoftDelete
     public Guid Uid { get; set; } = Guid.NewGuid();
     public string Name { get; set; } = string.Empty;
     public string? Domain { get; set; }
+    public bool IsHost { get; set; } = false;
     public bool IsDeleted { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

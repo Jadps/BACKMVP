@@ -31,10 +31,7 @@ namespace MVP.Infrastructure.Migrations
                     table.PrimaryKey("PK_Tenants", x => x.Id);
                 });
 
-            migrationBuilder.InsertData(
-                table: "Tenants",
-                columns: new[] { "Id", "Nombre", "Activo", "FechaCreacion" },
-                values: new object[] { 1, "Organización Inicial", true, DateTime.UtcNow });
+
             migrationBuilder.AddColumn<int>(
                 name: "TenantId",
                 table: "Usuarios",

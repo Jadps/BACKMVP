@@ -50,7 +50,9 @@ public class IdentityService(
     {
         user.UserName ??= user.Email;
 
-        await using var transaction = await context.BeginTransactionAsync();
+        var isInternalTransaction = context.Database.CurrentTransaction == null;
+        var transaction = isInternalTransaction ? await context.Database.BeginTransactionAsync() : null;
+
         try
         {
             var result = await userManager.CreateAsync(user, password);
@@ -60,24 +62,28 @@ public class IdentityService(
                 var roleResult = await userManager.AddToRolesAsync(user, roleNames);
                 if (!roleResult.Succeeded)
                 {
-                    await transaction.RollbackAsync();
+                    if (transaction != null) await transaction.RollbackAsync();
                     return ApplicationResult.Failure(roleResult.Errors.Select(e => e.Description));
                 }
             }
 
             if (result.Succeeded)
             {
-                await transaction.CommitAsync();
+                if (transaction != null) await transaction.CommitAsync();
                 return ApplicationResult.Success();
             }
 
-            await transaction.RollbackAsync();
+            if (transaction != null) await transaction.RollbackAsync();
             return ApplicationResult.Failure(result.Errors.Select(e => e.Description));
         }
         catch
         {
-            await transaction.RollbackAsync();
+            if (transaction != null) await transaction.RollbackAsync();
             throw;
+        }
+        finally
+        {
+            if (transaction != null) await transaction.DisposeAsync();
         }
     }
 
@@ -97,7 +103,8 @@ public class IdentityService(
         existingUser.CatStatusAccountId = user.CatStatusAccountId;
         existingUser.TenantId = user.TenantId;
 
-        await using var transaction = await context.BeginTransactionAsync();
+        var isInternalTransaction = context.Database.CurrentTransaction == null;
+        var transaction = isInternalTransaction ? await context.Database.BeginTransactionAsync() : null;
         try
         {
             var result = await userManager.UpdateAsync(existingUser);
@@ -111,18 +118,22 @@ public class IdentityService(
                 if (roleNames.Any())
                     await userManager.AddToRolesAsync(existingUser, roleNames);
 
-                await transaction.CommitAsync();
+                if (transaction != null) await transaction.CommitAsync();
                 await cache.RemoveByTagAsync($"user_{existingUser.Uid}_menu");
                 return ApplicationResult.Success();
             }
 
-            await transaction.RollbackAsync();
+            if (transaction != null) await transaction.RollbackAsync();
             return ApplicationResult.Failure(result.Errors.Select(e => e.Description));
         }
         catch
         {
-            await transaction.RollbackAsync();
+            if (transaction != null) await transaction.RollbackAsync();
             throw;
+        }
+        finally
+        {
+            if (transaction != null) await transaction.DisposeAsync();
         }
     }
 
@@ -147,6 +158,8 @@ public class IdentityService(
     {
         return await roleManager.Roles
             .Include(r => r.Tenant)
+            .Include(r => r.RoleModules)
+                .ThenInclude(rm => rm.Module)
             .Where(r => roleIds.Contains(r.Id))
             .ToListAsync();
     }
@@ -155,6 +168,8 @@ public class IdentityService(
     {
         return await roleManager.Roles
             .Include(r => r.Tenant)
+            .Include(r => r.RoleModules)
+                .ThenInclude(rm => rm.Module)
             .Where(r => roleUids.Contains(r.Uid))
             .ToListAsync();
     }
@@ -163,6 +178,8 @@ public class IdentityService(
     {
         return await roleManager.Roles
             .Include(r => r.Tenant)
+            .Include(r => r.RoleModules)
+                .ThenInclude(rm => rm.Module)
             .Where(r => !r.IsDeleted)
             .ToListAsync();
     }

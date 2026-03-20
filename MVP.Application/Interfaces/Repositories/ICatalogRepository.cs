@@ -9,5 +9,9 @@ namespace MVP.Application.Interfaces.Repositories;
 public interface ICatalogRepository
 {
     Task<List<Module>> GetActiveModulesWithSubModulesAsync(CancellationToken cancellationToken);
-    Task<List<int>> GetAllowedModuleIdsForUserAsync(Guid userUid, CancellationToken cancellationToken);
+    Task<List<Guid>> GetAllowedModuleIdsForUserAsync(Guid userUid, CancellationToken cancellationToken);
+    Task<List<Module>> GetModulesByUidsAsync(IEnumerable<Guid> uids, CancellationToken cancellationToken);
+    Task<Role?> GetRoleWithPermissionsByUidAsync(Guid uid, CancellationToken cancellationToken);
+    void AddRolePermissions(IEnumerable<RoleModule> roleModules);
+    void DeleteRolePermissions(IEnumerable<RoleModule> roleModules);
 }

@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using MVP.Domain.Entities;
 using MVP.Domain.Constants;
+using MVP.Application.Interfaces;
+using MVP.Application.DTOs;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -28,7 +30,7 @@ public static class DbInitializer
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
             
-            await SeedAsync(userManager, roleManager, context);
+            await SeedAsync(userManager, roleManager, context, scope.ServiceProvider);
         }
         catch (Exception)
         {
@@ -36,22 +38,8 @@ public static class DbInitializer
         }
     }
 
-    private static async Task SeedAsync(UserManager<User> userManager, RoleManager<Role> roleManager, ApplicationDbContext context)
-    {        
-        var tenant = await context.Tenants.FirstOrDefaultAsync(t => t.Name == "Main Company");
-        if (tenant == null)
-        {
-            tenant = new()
-            { 
-                Name = "Main Company", 
-                Uid = Guid.NewGuid(),
-                CreatedAt = DateTime.UtcNow,
-                IsDeleted = false
-            };
-            context.Tenants.Add(tenant);
-            await context.SaveChangesAsync();
-        }
-
+    private static async Task SeedAsync(UserManager<User> userManager, RoleManager<Role> roleManager, ApplicationDbContext context, IServiceProvider serviceProvider)
+    {
         if (!await context.Modules.AnyAsync())
         {
             var baseModules = new List<Module>
@@ -67,99 +55,36 @@ public static class DbInitializer
             await context.SaveChangesAsync();
         }
 
-        var adminRole = await roleManager.FindByNameAsync(AppRoles.GlobalAdmin);
-        if (adminRole == null)
+        var onboardingService = serviceProvider.GetRequiredService<IOnboardingService>();
+        
+        var adminEmail = "jadp.xs@gmail.com";
+        if (await userManager.FindByEmailAsync(adminEmail) == null)
         {
-            adminRole = new()
-            { 
-                Name = AppRoles.GlobalAdmin, 
-                TenantId = null, 
-                Uid = Guid.NewGuid(),
-                IsDeleted = false
-            };
-            await roleManager.CreateAsync(adminRole);
-        }
-
-        var userRole = await roleManager.FindByNameAsync(AppRoles.User);
-        if (userRole == null)
-        {
-            userRole = new()
+            var adminPassword = Environment.GetEnvironmentVariable("AdminInitialPassword") ?? "Sgedi.2024!";
+            
+            var request = new OnboardingRequestDto
             {
-                Name = AppRoles.User,
-                TenantId = null,
-                Uid = Guid.NewGuid(),
-                IsDeleted = false
-            };
-            await roleManager.CreateAsync(userRole);
-        }
-
-        var modulesDb = await context.Modules.ToListAsync();
-        foreach (var module in modulesDb)
-        {
-            var adminPermissionExists = await context.Set<RoleModule>()
-                .AnyAsync(rm => rm.RoleId == adminRole.Id && rm.ModuleId == module.Id);
-
-            if (!adminPermissionExists)
-            {
-                context.Set<RoleModule>().Add(new()
-                {
-                    RoleId = adminRole.Id,
-                    ModuleId = module.Id,
-                    Permission = PermissionLevel.Admin
-                });
-            }
-
-            var userPermissionExists = await context.Set<RoleModule>()
-                .AnyAsync(rm => rm.RoleId == userRole.Id && rm.ModuleId == module.Id);
-
-            if (!userPermissionExists)
-            {
-                context.Set<RoleModule>().Add(new()
-                {
-                    RoleId = userRole.Id,
-                    ModuleId = module.Id,
-                    Permission = PermissionLevel.Read
-                });
-            }
-        }
-        await context.SaveChangesAsync();
-
-        if (await userManager.FindByEmailAsync("jadp.xs@gmail.com") == null)
-        {
-            var appUser = new User
-            {
-                UserName = "jadp.xs@gmail.com",
-                Email = "jadp.xs@gmail.com",
-                FirstName = "Jesus Alonso",
-                LastName = "Dominguez",
-                SecondLastName = "Perez",
-                FriendlyName = "JADP",
-                TenantId = null, 
-                EmailConfirmed = true,
-                Uid = Guid.NewGuid(),
-                IsDeleted = false,
-                CatStatusAccountId = 1
+                CompanyName = "Main Company",
+                Domain = "main.sgedi.com",
+                AdminEmail = adminEmail,
+                AdminFirstName = "Jesus Alonso",
+                AdminLastName = "Dominguez",
+                AdminSecondLastName = "Perez",
+                AdminPassword = adminPassword
             };
 
-            var adminPassword = Environment.GetEnvironmentVariable("AdminInitialPassword");
-            if (string.IsNullOrEmpty(adminPassword))
-            {
-                adminPassword = "Sgedi.2024!"; 
-            }
-
-            var result = await userManager.CreateAsync(appUser, adminPassword);
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(appUser, AppRoles.GlobalAdmin);
-            }
+            await onboardingService.RegisterNewTenantAsync(request, AppRoles.GlobalAdmin, isHost: true);
         }
 
-        if (await userManager.FindByEmailAsync("demo@mail.com") == null)
+        var demoEmail = "demo@mail.com";
+        if (await userManager.FindByEmailAsync(demoEmail) == null)
         {
+            var tenant = await context.Tenants.FirstAsync(t => t.Name == "Main Company");
+            
             var demoUser = new User
             {
-                UserName = "demo@mail.com",
-                Email = "demo@mail.com",
+                UserName = demoEmail,
+                Email = demoEmail,
                 FirstName = "Demo",
                 LastName = "User",
                 FriendlyName = "Demo",
@@ -173,7 +98,12 @@ public static class DbInitializer
             var result = await userManager.CreateAsync(demoUser, "Demo.2026!");
             if (result.Succeeded)
             {
-                await userManager.AddToRoleAsync(demoUser, AppRoles.User);
+                var userRoleName = AppRoles.TenantUser;
+                if (!await roleManager.RoleExistsAsync(userRoleName))
+                {
+                    await roleManager.CreateAsync(new Role { Name = userRoleName, TenantId = tenant.Id });
+                }
+                await userManager.AddToRoleAsync(demoUser, userRoleName);
             }
         }
     }

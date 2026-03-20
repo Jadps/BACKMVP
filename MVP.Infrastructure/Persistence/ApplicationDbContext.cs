@@ -146,6 +146,24 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, int>
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<Tenant>(entity => {
+            entity.ToTable("Tenants");
+            entity.HasKey(t => t.Id);
+            entity.HasIndex(t => t.Uid).IsUnique();
+            
+            entity.HasMany(t => t.Users)
+                  .WithOne(u => u.Tenant)
+                  .HasForeignKey(u => u.TenantId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasMany(t => t.Roles)
+                  .WithOne(r => r.Tenant)
+                  .HasForeignKey(r => r.TenantId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasQueryFilter(t => !t.IsDeleted && (CurrentTenantId == null || t.Id == CurrentTenantId));
+        });
+
         modelBuilder.Entity<Module>(entity =>
         {
             entity.ToTable("Modules");
@@ -175,32 +193,13 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, int>
         modelBuilder.Entity<User>(entity => {
             entity.ToTable("Users");
             entity.HasIndex(e => e.Uid).IsUnique();
-            
-            entity.HasOne(u => u.Tenant)
-                  .WithMany()
-                  .HasForeignKey(u => u.TenantId)
-                  .OnDelete(DeleteBehavior.Restrict);
-
             entity.HasIndex(u => u.RefreshToken);
-
             entity.HasQueryFilter(u => !u.IsDeleted && (CurrentTenantId == null || u.TenantId == CurrentTenantId || u.TenantId == null));
-        });
-        
-        modelBuilder.Entity<Tenant>(entity => {
-            entity.ToTable("Tenants");
-            entity.HasKey(t => t.Id);
-            entity.HasIndex(t => t.Uid).IsUnique();
-            entity.HasQueryFilter(t => !t.IsDeleted && (CurrentTenantId == null || t.Id == CurrentTenantId));
         });
         
         modelBuilder.Entity<Role>(entity => {
             entity.ToTable("Roles");
             entity.HasIndex(e => e.Uid).IsUnique();
-            entity.HasOne(r => r.Tenant)
-                  .WithMany()
-                  .HasForeignKey(r => r.TenantId)
-                  .OnDelete(DeleteBehavior.Restrict);
-
             entity.HasQueryFilter(r => !r.IsDeleted && (CurrentTenantId == null || r.TenantId == CurrentTenantId || r.TenantId == null));
         });
 

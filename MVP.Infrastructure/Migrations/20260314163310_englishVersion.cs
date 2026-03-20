@@ -163,11 +163,6 @@ namespace MVP.Infrastructure.Migrations
                 table: "RoleClaims",
                 newName: "IX_RoleClaims_RoleId");
 
-            migrationBuilder.AddColumn<int>(
-                name: "TenantId1",
-                table: "Roles",
-                type: "integer",
-                nullable: true);
 
             migrationBuilder.AddPrimaryKey(
                 name: "PK_UserTokens",
@@ -266,7 +261,6 @@ namespace MVP.Infrastructure.Migrations
                     RefreshToken = table.Column<string>(type: "text", nullable: true),
                     RefreshTokenExpiration = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     RoleIds = table.Column<List<int>>(type: "integer[]", nullable: true),
-                    TenantId1 = table.Column<int>(type: "integer", nullable: true),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -291,11 +285,6 @@ namespace MVP.Infrastructure.Migrations
                         principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Users_Tenants_TenantId1",
-                        column: x => x.TenantId1,
-                        principalTable: "Tenants",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -357,10 +346,6 @@ namespace MVP.Infrastructure.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Roles_TenantId1",
-                table: "Roles",
-                column: "TenantId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Documents_FileId",
@@ -420,10 +405,6 @@ namespace MVP.Infrastructure.Migrations
                 table: "Users",
                 column: "TenantId");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Users_TenantId1",
-                table: "Users",
-                column: "TenantId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_Uid",
@@ -445,12 +426,6 @@ namespace MVP.Infrastructure.Migrations
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Cascade);
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_Roles_Tenants_TenantId1",
-                table: "Roles",
-                column: "TenantId1",
-                principalTable: "Tenants",
-                principalColumn: "Id");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_UserClaims_Users_UserId",
@@ -500,9 +475,6 @@ namespace MVP.Infrastructure.Migrations
                 name: "FK_RoleClaims_Roles_RoleId",
                 table: "RoleClaims");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_Roles_Tenants_TenantId1",
-                table: "Roles");
 
             migrationBuilder.DropForeignKey(
                 name: "FK_UserClaims_Users_UserId",
@@ -539,9 +511,7 @@ namespace MVP.Infrastructure.Migrations
             migrationBuilder.DropTable(
                 name: "Modules");
 
-            migrationBuilder.DropIndex(
-                name: "IX_Roles_TenantId1",
-                table: "Roles");
+
 
             migrationBuilder.DropPrimaryKey(
                 name: "PK_UserTokens",
@@ -563,9 +533,7 @@ namespace MVP.Infrastructure.Migrations
                 name: "PK_RoleClaims",
                 table: "RoleClaims");
 
-            migrationBuilder.DropColumn(
-                name: "TenantId1",
-                table: "Roles");
+
 
             migrationBuilder.RenameTable(
                 name: "UserTokens",

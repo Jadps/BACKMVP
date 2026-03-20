@@ -17,12 +17,12 @@ public class CatalogRepository(ApplicationDbContext context) : ICatalogRepositor
         return await context.Modules
             .AsNoTracking()
             .Include(m => m.SubModules.Where(sm => sm.IsProduction).OrderBy(sm => sm.Order))
-            .Where(x => x.IsProduction)
+            .Where(x => x.IsProduction && x.ParentId == null)
             .OrderBy(m => m.Order)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<int>> GetAllowedModuleIdsForUserAsync(Guid userUid, CancellationToken cancellationToken)
+    public async Task<List<Guid>> GetAllowedModuleIdsForUserAsync(Guid userUid, CancellationToken cancellationToken)
     {
         return await context.Users
             .AsNoTracking()
@@ -31,8 +31,32 @@ public class CatalogRepository(ApplicationDbContext context) : ICatalogRepositor
             .Join(context.Roles, roleId => roleId, r => r.Id, (roleId, r) => r)
             .SelectMany(r => r.RoleModules)
             .Where(rm => rm.Permission > PermissionLevel.None)
-            .Select(rm => rm.ModuleId)
+            .Select(rm => rm.Module.Uid)
             .Distinct()
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<Module>> GetModulesByUidsAsync(IEnumerable<Guid> uids, CancellationToken cancellationToken)
+    {
+        return await context.Modules
+            .Where(m => uids.Contains(m.Uid))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Role?> GetRoleWithPermissionsByUidAsync(Guid uid, CancellationToken cancellationToken)
+    {
+        return await context.Roles
+            .Include(r => r.RoleModules)
+            .FirstOrDefaultAsync(r => r.Uid == uid, cancellationToken);
+    }
+
+    public void AddRolePermissions(IEnumerable<RoleModule> roleModules)
+    {
+        context.RoleModules.AddRange(roleModules);
+    }
+
+    public void DeleteRolePermissions(IEnumerable<RoleModule> roleModules)
+    {
+        context.RoleModules.RemoveRange(roleModules);
     }
 }

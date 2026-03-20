@@ -31,7 +31,12 @@ namespace MVP.Application.Mappings
 
             CreateMap<Role, RoleDto>()
                 .ForMember(dest => dest.Id,       opt => opt.MapFrom(src => src.Uid))
-                .ForMember(dest => dest.TenantId, opt => opt.MapFrom(src => src.Tenant != null ? src.Tenant.Uid : (Guid?)null));
+                .ForMember(dest => dest.TenantId, opt => opt.MapFrom(src => src.Tenant != null ? src.Tenant.Uid : (Guid?)null))
+                .ForMember(dest => dest.Permissions, opt => opt.MapFrom(src => src.RoleModules));
+
+            CreateMap<RoleModule, RolePermissionDto>()
+                .ForMember(dest => dest.ModuleId,  opt => opt.MapFrom(src => src.Module.Uid))
+                .ForMember(dest => dest.Permission, opt => opt.MapFrom(src => src.Permission));
 
             CreateMap<RoleDto, Role>()
                 .ForMember(dest => dest.Id,       opt => opt.Ignore())
@@ -53,6 +58,8 @@ namespace MVP.Application.Mappings
             CreateMap<TenantDto, Tenant>()
                 .ForMember(dest => dest.Id,  opt => opt.Ignore())
                 .ForMember(dest => dest.Uid, opt => opt.Ignore());
+
+            CreateMap<ModuleDto, ModuleDto>();
 
         }
     }

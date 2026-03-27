@@ -1,48 +1,54 @@
-# SaaS MVP Backend API
+# 🚀 MVP Backend API
 
-RESTful API de alto rendimiento construida para un MVP de Software as a Service (SaaS). Implementa principios de **Clean Architecture** para garantizar la separación de responsabilidades, mantenibilidad y escalabilidad.
+Welcome to my backend API for the MVP system. Engineered for high performance, enterprise-grade scalability, and long-term maintainability.
 
-🚀 **Demo en Vivo (Health Check):** [https://backmvp.onrender.com/api/health](https://backmvp.onrender.com/api/health)
-🌐 **Frontend App:** [https://frontmvp-ashy.vercel.app]
+## 🛠 Tech Stack
 
-## ⚙️ Stack Tecnológico
+- **Framework:** .NET 10
+- **Architecture:** Clean Architecture (CA)
+- **ORM:** Entity Framework Core
+- **Database:** SQL Server / PostgreSQL
 
-* **Framework:** .NET 10 (ASP.NET Core Web API)
-* **Lenguaje:** C# 14
-* **Base de Datos:** PostgreSQL (Supabase) via Entity Framework Core
-* **Autenticación:** ASP.NET Core Identity + JWT (JSON Web Tokens)
-* **Seguridad:** Antiforgery Tokens (XSRF), Rate Limiting, CORS estricto
-* **Background Jobs:** Hangfire
-* **Infraestructura/Despliegue:** Render (Dockerized)
+## 🏗 Architecture Overview
 
-## 🏗️ Arquitectura (Clean Architecture)
+This project rigorously adheres to **Clean Architecture** principles, enforcing a strict separation of concerns through four decoupled layers. Dependencies always flow inwards toward the Domain.
 
-El proyecto está dividido en 4 capas principales:
+1. **Domain:** The core of our system. Contains entities, value objects, domain events, and domain exceptions. It has absolutely **zero** dependencies on external frameworks or the database.
+2. **Application:** The brains of the operation. Contains business use cases, DTOs, interfaces for external services (e.g., repositories), and handles command/query validation.
+3. **Infrastructure:** The implementation details. Contains the Entity Framework Core `DbContext`, repository implementations, external API clients, and identity management mechanisms.
+4. **WebAPI:** The presentation layer. Exposes endpoints (Minimal APIs / Controllers), processes HTTP requests, and acts exclusively as the composition root for Dependency Injection.
 
-1.  **Domain:** Entidades centrales (`User`, `Tenant`, `Role`, `Module`), Enums y excepciones de dominio. Sin dependencias externas.
-2.  **Application:** Casos de uso, interfaces (contratos) y DTOs.
-3.  **Infrastructure:** Implementaciones de las interfaces, configuración de Entity Framework (`ApplicationDbContext`), servicios de Identity y Hangfire.
-4.  **WebAPI:** Controladores REST, Middleware (Manejo global de errores, resolución de Tenant) y configuración de inyección de dependencias (`Program.cs`).
+## 🧠 Key Decisions & Trade-offs
 
-## 🛠️ Instalación y Configuración Local
+### Why .NET 10?
+.NET 10 provides massive performance improvements, highly optimized Minimal APIs, and leverages the expressive power of C# 14. The maturity of the ecosystem allows us to build a high-throughput, low-latency API without sacrificing developer experience or security.
 
-### Requisitos Previos
-* [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-* Instancia de PostgreSQL (Local o Docker)
+### Clean Architecture: Maintainability vs. Initial Overhead
+While Clean Architecture introduces more upfront boilerplate compared to a traditional monolithic layer approach, it prevents technical debt. 
+* **Trade-off:** The higher initial cognitive load pays off by guaranteeing that our core business rules remain completely isolated from UI, database, or framework churn. This ensures the codebase scales predictably as new developers join the team.
 
-### Variables de Entorno
-Crea un archivo `appsettings.Development.json` o configura tus "User Secrets" con las siguientes llaves requeridas:
+### Architectural Simplicity: Injected Services vs. MediatR
+We deliberately opted for **Directly Injected Application Services** via standard interfaces instead of utilizing MediatR for pipeline routing.
+* **Trade-off:** While MediatR provides elegant decoupling and CQRS out-of-the-box, direct service injection avoids "magic" routing. We prioritize a clear, traceable call stack that is instantly navigable in the IDE. This decision drastically reduces debugging time and keeps dependencies explicit.
 
-| Llave | Descripción |
-| :--- | :--- |
-| `ConnectionStrings:DefaultConnection` | Cadena de conexión a PostgreSQL |
-| `Jwt:SecretKey` | Llave HMACSHA256 (Mínimo 32 caracteres) |
-| `AdminInitialPassword` | Contraseña para el seeder del administrador inicial |
+### Data Access: Entity Framework Core
+We utilize **EF Core** as our ORM. Migrations are exclusively managed within the Infrastructure layer.
+* **Trade-off:** While EF Core adds an abstraction overhead compared to raw SQL, the productivity gains, strongly-typed LINQ capabilities, and built-in tracking outweigh the minor raw performance costs. For critical read-heavy paths, we design our repositories to easily drop down to Dapper or raw SQL when strictly necessary.
 
-### Ejecución
-1. Clona el repositorio: `git clone https://github.com/Jadps/BACKMVP.git`
-2. Restaura las dependencias: `dotnet restore`
-3. Aplica las migraciones de base de datos: `dotnet ef database update --project MVP.Infrastructure --startup-project MVP.WebAPI`
-4. Ejecuta la aplicación: `dotnet run --project MVP.WebAPI`
+### Personal Philosophy: Readability & Strongly Typed over Brevity
+"Code is read far more often than it is written."
+We prioritize comprehensive, explicit naming and **strongly-typed structures** over clever, shortened syntax. You will find that we prefer explicit result object patterns rather than using exceptions for control flow. Our focus is to make the codebase self-documenting, safe, and easily understandable for any engineer to grasp at a glance.
 
-La API estará disponible en `https://localhost:44329` (o el puerto configurado en `launchSettings.json`). La documentación OpenAPI (Scalar/Swagger) estará disponible en la ruta raíz durante el desarrollo.
+## 🚀 How to Run
+
+1. **Ensure Prerequisites:** Install the .NET 10 SDK.
+2. **Setup Database:** Update your connection string in `appsettings.Development.json`.
+3. **Run Migrations:** 
+   ```bash
+   dotnet ef database update --project Infrastructure --startup-project WebAPI
+   ```
+4. **Start the API:**
+   ```bash
+   dotnet run --project WebAPI
+   ```
+5. **Explore API:** Navigate to `https://localhost:44329/scalar/v1` to view the endpoint documentation.

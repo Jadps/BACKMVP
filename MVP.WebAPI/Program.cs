@@ -67,8 +67,7 @@ var appOptions = builder.Configuration.GetSection(MVP.Infrastructure.Configurati
 builder.Services.AddAntiforgery(options => 
 {
     options.HeaderName = appOptions?.AntiforgeryHeaderName ?? "X-XSRF-TOKEN";
-    options.Cookie.Name = "XSRF-TOKEN";
-    options.Cookie.HttpOnly = false;
+    options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None;
     

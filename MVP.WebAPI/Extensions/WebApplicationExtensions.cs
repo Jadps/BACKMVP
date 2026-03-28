@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
 
@@ -14,6 +14,10 @@ public static class WebApplicationExtensions
         return app.Use(async (context, next) =>
         {
             var antiforgery = context.RequestServices.GetRequiredService<IAntiforgery>();
+            
+            var configuration = context.RequestServices.GetRequiredService<IConfiguration>();
+            var cookieDomain = configuration["Config:CookieDomain"] ?? ".alonsodev.online";
+
             var tokens = antiforgery.GetAndStoreTokens(context);
 
             if (tokens.RequestToken != null)
@@ -25,7 +29,8 @@ public static class WebApplicationExtensions
                     {
                         HttpOnly = false,
                         Secure = true,
-                        SameSite = SameSiteMode.None
+                        SameSite = SameSiteMode.None,
+                        Domain = cookieDomain
                     });
             }
 

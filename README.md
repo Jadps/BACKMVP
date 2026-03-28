@@ -52,3 +52,10 @@ This project uses Clean Architecture to keep business logic separated from frame
 
    ```bash
    dotnet ef database update --project Infrastructure --startup-project WebAPI
+   ```
+
+3. Run the containers
+
+   ```bash
+   docker compose --profile local up -d (youll need docker installed)
+   ```

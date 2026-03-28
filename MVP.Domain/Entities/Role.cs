@@ -12,4 +12,5 @@ public class Role : IdentityRole<int>, ISoftDelete
     public int? TenantId { get; set; }
     public virtual Tenant? Tenant { get; set; }
     public virtual ICollection<RoleModule> RoleModules { get; set; } = new List<RoleModule>();
+    public virtual ICollection<IdentityUserRole<int>> UserRoles { get; set; } = new List<IdentityUserRole<int>>();
 }

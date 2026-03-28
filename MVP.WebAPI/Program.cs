@@ -2,6 +2,9 @@ using MVP.Application;
 using MVP.Infrastructure;
 using MVP.Application.Interfaces;
 using MVP.WebAPI.Services;
+using MVP.WebAPI.Hubs;
+using MassTransit;
+using MVP.Infrastructure.Workers;
 using Serilog;
 using Asp.Versioning;
 using MVP.Infrastructure.Persistence;
@@ -15,8 +18,8 @@ using Hangfire;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using FluentValidation;
 using Microsoft.AspNetCore.HttpOverrides;
+using MVP.WebAPI.Extensions;
 
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
@@ -40,7 +43,8 @@ builder.Host.UseSerilog((context, configuration) =>
 
 builder.Services.AddOpenApi();
 
-builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<MVP.Infrastructure.Persistence.ApplicationDbContext>(name: "PostgresDB", tags: new[] { "db", "sql" });
 
 builder.Services.AddApiVersioning(options =>
 {
@@ -67,9 +71,12 @@ builder.Services.AddAntiforgery(options =>
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Services.AddSignalR();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentTenantService, CurrentTenantService>();
+builder.Services.AddTransient<IReportNotificationService, ReportNotificationService>();
+builder.Services.AddSingleton<Microsoft.AspNetCore.SignalR.IUserIdProvider, CustomUserIdProvider>();
 
 builder.Services.AddAuthorization(options =>
 {
@@ -109,6 +116,21 @@ builder.Services.AddInfrastructureSecurity(builder.Configuration);
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<ReportConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host("localhost", "/", h => {
+            h.Username("guest");
+            h.Password("guest");
+        });
+
+        cfg.ConfigureEndpoints(context);
+    });
+});
+
 var app = builder.Build();
 
 app.UseForwardedHeaders();
@@ -129,48 +151,7 @@ app.UseAuthorization();
 app.UseMiddleware<TenantResolverMiddleware>();
 app.UseRateLimiter();
 
-app.Use(async (context, next) =>
-{
-    var antiforgery = context.RequestServices.GetRequiredService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
-    var tokens = antiforgery.GetAndStoreTokens(context);
-    
-    if (tokens.RequestToken != null)
-    {
-        context.Response.Cookies.Append(
-            "XSRF-TOKEN",
-            tokens.RequestToken,
-            new CookieOptions
-            {
-                HttpOnly = false,
-                Secure = true,
-                SameSite = SameSiteMode.None
-            });
-    }
-
-    if (HttpMethods.IsPost(context.Request.Method) || 
-        HttpMethods.IsPut(context.Request.Method) || 
-        HttpMethods.IsDelete(context.Request.Method))
-    {
-        var endpoint = context.GetEndpoint();
-        var ignoreAntiforgery = endpoint?.Metadata.GetMetadata<Microsoft.AspNetCore.Mvc.IgnoreAntiforgeryTokenAttribute>();
-
-        if (ignoreAntiforgery == null)
-        {
-            try
-            {
-                await antiforgery.ValidateRequestAsync(context);
-            }
-            catch (Microsoft.AspNetCore.Antiforgery.AntiforgeryValidationException)
-            {
-                context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                await context.Response.WriteAsJsonAsync(new { message = "Antiforgery token validation failed." });
-                return;
-            }
-        }
-    }
-
-    await next();
-});
+app.UseAntiforgeryTokenMiddleware();
 
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
@@ -178,6 +159,7 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 });
 
 app.MapControllers();
+app.MapHub<ReportsHub>("/hubs/reports");
 
 app.MapHealthChecks("/api/health", new HealthCheckOptions
 {

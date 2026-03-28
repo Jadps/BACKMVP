@@ -2,6 +2,7 @@ services:
   db-postgres:
     image: postgres:16
     container_name: dbmvp
+    profiles: [ "local" ]
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER}
@@ -15,6 +16,7 @@ services:
   pgadmin:
     image: dpage/pgadmin4
     container_name: mvp-pgadmin
+    profiles: [ "local" ]
     restart: unless-stopped
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
@@ -24,5 +26,22 @@ services:
     depends_on:
       - db-postgres
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: mvp-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    container_name: mvp-gotenberg
+    restart: unless-stopped
+    command:
+      - "gotenberg"
+      - "--api-port=3000"
+    ports:
+      - "3000:3000"
 volumes:
   pgdata:

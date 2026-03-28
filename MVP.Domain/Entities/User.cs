@@ -20,6 +20,7 @@ public class User : IdentityUser<int>, ISoftDelete
     public DateTime? RefreshTokenExpiration { get; set; }
 
     public List<int>? RoleIds { get; set; }
+    public virtual ICollection<IdentityUserRole<int>> UserRoles { get; set; } = new List<IdentityUserRole<int>>();
 
     public string FullName => $"{FirstName} {LastName} {SecondLastName}".Trim();
 }

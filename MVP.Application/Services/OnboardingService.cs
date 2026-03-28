@@ -3,11 +3,13 @@ using MVP.Application.Interfaces;
 using MVP.Application.Interfaces.Repositories;
 using MVP.Domain.Constants;
 using MVP.Domain.Entities;
+using MVP.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using AutoMapper;
 using Hangfire;
+using Microsoft.Extensions.Logging;
 
 namespace MVP.Application.Services;
 
@@ -16,7 +18,8 @@ public class OnboardingService(
     ITenantRepository tenantRepository,
     ICatalogRepository catalogRepository,
     IIdentityService identityService, 
-    IBackgroundJobClient backgroundJobs) : IOnboardingService
+    IBackgroundJobClient backgroundJobs,
+    ILogger<OnboardingService> logger) : IOnboardingService
 {
     public async Task<ApplicationResult> RegisterNewTenantAsync(OnboardingRequestDto request, string initialRoleName = AppRoles.TenantAdmin, bool isHost = false)
     {
@@ -73,7 +76,7 @@ public class OnboardingService(
                 Email = request.AdminEmail,
                 UserName = request.AdminEmail,
                 TenantId = tenant.Id,
-                CatStatusAccountId = 1,
+                CatStatusAccountId = (int)UserAccountStatus.Active,
                 IsDeleted = false
             };
 
@@ -91,8 +94,9 @@ public class OnboardingService(
 
             return ApplicationResult.Success();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            logger.LogError(ex, "Error during tenant onboarding for company {CompanyName}", request.CompanyName);
             await unitOfWork.RollbackTransactionAsync();
             throw;
         }

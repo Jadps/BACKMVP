@@ -28,7 +28,10 @@ public class CurrentTenantService : ICurrentTenantService
         }
     }
 
-    public string? UserId => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    public string? UserId => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+        ?? _httpContextAccessor.HttpContext?.User?.FindFirst("sub")?.Value 
+        ?? _httpContextAccessor.HttpContext?.User?.FindFirst("nameid")?.Value
+        ?? _httpContextAccessor.HttpContext?.User?.FindFirst("uid")?.Value;
 
     public bool IsSuperAdmin => _httpContextAccessor.HttpContext?.User?.IsInRole(AppRoles.GlobalAdmin) ?? false;
 

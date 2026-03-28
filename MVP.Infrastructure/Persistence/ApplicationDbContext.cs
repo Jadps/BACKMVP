@@ -33,6 +33,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, int>
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<FileEntity> Files => Set<FileEntity>();
     public DbSet<Document> Documents => Set<Document>();
+    public DbSet<GeneratedReport> GeneratedReports => Set<GeneratedReport>();
 
     public async Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
@@ -195,12 +196,22 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, int>
             entity.HasIndex(e => e.Uid).IsUnique();
             entity.HasIndex(u => u.RefreshToken);
             entity.HasQueryFilter(u => !u.IsDeleted && (CurrentTenantId == null || u.TenantId == CurrentTenantId || u.TenantId == null));
+
+            entity.HasMany(e => e.UserRoles)
+                  .WithOne()
+                  .HasForeignKey(ur => ur.UserId)
+                  .IsRequired();
         });
         
         modelBuilder.Entity<Role>(entity => {
             entity.ToTable("Roles");
             entity.HasIndex(e => e.Uid).IsUnique();
             entity.HasQueryFilter(r => !r.IsDeleted && (CurrentTenantId == null || r.TenantId == CurrentTenantId || r.TenantId == null));
+
+            entity.HasMany(e => e.UserRoles)
+                  .WithOne()
+                  .HasForeignKey(ur => ur.RoleId)
+                  .IsRequired();
         });
 
         modelBuilder.Entity<AuditLog>(entity => {
@@ -238,6 +249,24 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, int>
                   .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasQueryFilter(d => !d.IsDeleted && (CurrentTenantId == null || d.TenantId == CurrentTenantId || d.TenantId == null));
+        });
+
+        modelBuilder.Entity<GeneratedReport>(entity => {
+            entity.ToTable("GeneratedReports");
+            entity.HasKey(g => g.Id);
+            entity.HasIndex(g => g.Uid).IsUnique();
+
+            entity.HasOne(g => g.User)
+                  .WithMany()
+                  .HasForeignKey(g => g.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(g => g.Tenant)
+                  .WithMany()
+                  .HasForeignKey(g => g.TenantId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasQueryFilter(g => !g.IsDeleted && (CurrentTenantId == null || g.TenantId == CurrentTenantId || g.TenantId == null));
         });
 
         modelBuilder.Entity<IdentityUserRole<int>>().ToTable("UserRoles");

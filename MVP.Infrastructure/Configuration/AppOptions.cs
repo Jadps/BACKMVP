@@ -7,4 +7,5 @@ public record AppOptions
     public string FrontendUrl { get; init; } = string.Empty;
     public string CookieDomain { get; init; } = string.Empty;
     public string AntiforgeryHeaderName { get; init; } = "X-XSRF-TOKEN";
+    public string GotenbergUrl { get; init; } = "http://localhost:3000";
 }

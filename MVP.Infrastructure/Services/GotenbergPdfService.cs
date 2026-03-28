@@ -26,7 +26,7 @@ public class GotenbergPdfService : IPdfGeneratorService
         var htmlContentItem = new ByteArrayContent(htmlBytes);
         request.Add(htmlContentItem, "files", "index.html");
 
-        var response = await _httpClient.PostAsync("http://localhost:3000/forms/chromium/convert/html", request);
+        var response = await _httpClient.PostAsync("forms/chromium/convert/html", request);
         response.EnsureSuccessStatusCode();
 
         return await response.Content.ReadAsByteArrayAsync();

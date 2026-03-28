@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using MVP.Infrastructure.Configuration;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -65,7 +67,11 @@ public static class DependencyInjection
             services.AddScoped(providerType, implementation);
         }
 
-        services.AddHttpClient<MVP.Infrastructure.Services.IPdfGeneratorService, MVP.Infrastructure.Services.GotenbergPdfService>();
+        services.AddHttpClient<IPdfGeneratorService, GotenbergPdfService>((sp, client) =>
+        {
+            var options = sp.GetRequiredService<IOptions<AppOptions>>().Value;
+            client.BaseAddress = new Uri(options.GotenbergUrl);
+        });
 
         var supabaseUrl = configuration["Supabase:Url"];
         var supabaseKey = configuration["Supabase:Key"];

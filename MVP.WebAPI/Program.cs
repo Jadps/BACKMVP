@@ -56,7 +56,7 @@ builder.Services.AddApiVersioning(options =>
 
 builder.Services.AddMemoryCache();
 builder.Services.AddHybridCache();
-builder.Services.AddControllers(options =>
+builder.Services.AddControllersWithViews(options =>
     {
         options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
     })

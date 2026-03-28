@@ -62,11 +62,20 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
 
+var appOptions = builder.Configuration.GetSection(MVP.Infrastructure.Configuration.AppOptions.SectionName).Get<MVP.Infrastructure.Configuration.AppOptions>();
+
 builder.Services.AddAntiforgery(options => 
 {
-    options.HeaderName = "X-XSRF-TOKEN";
+    options.HeaderName = appOptions?.AntiforgeryHeaderName ?? "X-XSRF-TOKEN";
+    options.Cookie.Name = "XSRF-TOKEN";
+    options.Cookie.HttpOnly = false;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None;
+    
+    if (!string.IsNullOrEmpty(appOptions?.CookieDomain))
+    {
+        options.Cookie.Domain = appOptions.CookieDomain;
+    }
 });
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

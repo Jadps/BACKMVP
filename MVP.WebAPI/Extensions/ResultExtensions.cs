@@ -27,15 +27,41 @@ public static class ResultExtensions
 
     private static IActionResult MapErrorToActionResult(ErrorType type, string? message)
     {
-        var errorResponse = new { Error = message ?? "An error occurred during the operation." };
+        var problemDetails = new ProblemDetails
+        {
+            Detail = message ?? "An error occurred during the operation.",
+            Title = GetTitleForErrorType(type),
+            Status = GetStatusForErrorType(type)
+        };
 
         return type switch
         {
-            ErrorType.NotFound => new NotFoundObjectResult(errorResponse),
-            ErrorType.Validation => new BadRequestObjectResult(errorResponse),
-            ErrorType.Conflict => new ConflictObjectResult(errorResponse),
-            ErrorType.Unauthorized => new UnauthorizedObjectResult(errorResponse),
-            _ => new BadRequestObjectResult(errorResponse)
+            ErrorType.NotFound => new NotFoundObjectResult(problemDetails),
+            ErrorType.Validation => new BadRequestObjectResult(problemDetails),
+            ErrorType.Conflict => new ConflictObjectResult(problemDetails),
+            ErrorType.Unauthorized => new UnauthorizedObjectResult(problemDetails),
+            ErrorType.Forbidden => new ObjectResult(problemDetails) { StatusCode = StatusCodes.Status403Forbidden },
+            _ => new BadRequestObjectResult(problemDetails)
         };
     }
+
+    private static string GetTitleForErrorType(ErrorType type) => type switch
+    {
+        ErrorType.NotFound => "Resource Not Found",
+        ErrorType.Validation => "Validation Error",
+        ErrorType.Conflict => "Business Rule Conflict",
+        ErrorType.Unauthorized => "Unauthorized Access",
+        ErrorType.Forbidden => "Access Forbidden",
+        _ => "Bad Request"
+    };
+
+    private static int GetStatusForErrorType(ErrorType type) => type switch
+    {
+        ErrorType.NotFound => StatusCodes.Status404NotFound,
+        ErrorType.Validation => StatusCodes.Status400BadRequest,
+        ErrorType.Conflict => StatusCodes.Status409Conflict,
+        ErrorType.Unauthorized => StatusCodes.Status401Unauthorized,
+        ErrorType.Forbidden => StatusCodes.Status403Forbidden,
+        _ => StatusCodes.Status400BadRequest
+    };
 }

@@ -9,8 +9,10 @@ using MVP.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Hangfire;
 using Hangfire.PostgreSql;
+using MVP.Application.Interfaces;
 using MVP.Application.Interfaces.Repositories;
 using MVP.Infrastructure.Repositories;
+using MVP.Infrastructure.Services;
 
 namespace MVP.Infrastructure;
 
@@ -37,17 +39,17 @@ public static class DependencyInjection
 
         services.AddScoped<MVP.Application.Interfaces.IUnitOfWork, UnitOfWork>();
 
-        services.Configure<MVP.Infrastructure.Configuration.SftpStorageOptions>(
-            configuration.GetSection(MVP.Infrastructure.Configuration.SftpStorageOptions.SectionName));
         services.Configure<MVP.Infrastructure.Configuration.SmtpEmailOptions>(
             configuration.GetSection(MVP.Infrastructure.Configuration.SmtpEmailOptions.SectionName));
         services.Configure<MVP.Infrastructure.Configuration.AppOptions>(
             configuration.GetSection(MVP.Infrastructure.Configuration.AppOptions.SectionName));
 
         services.AddScoped<MVP.Application.Interfaces.IFileService, MVP.Infrastructure.Services.FileService>();
-        services.AddScoped<MVP.Application.Interfaces.IFileStorageService, MVP.Infrastructure.Services.SftpStorageService>();
-        services.AddScoped<MVP.Application.Interfaces.IEmailService, MVP.Infrastructure.Services.SmtpEmailService>();
-        services.AddScoped<MVP.Application.Interfaces.IIdentityService, MVP.Infrastructure.Services.IdentityService>();
+        services.AddScoped<MVP.Application.Interfaces.IFileStorageService, MVP.Infrastructure.Services.SupabaseStorageService>();
+        services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<IEmailService, SmtpEmailService>();
+        services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<IPdfGeneratorService, GotenbergPdfService>();
         services.AddScoped<MVP.Application.Interfaces.IAuthService, MVP.Infrastructure.Services.AuthService>();
         services.AddScoped<MVP.Application.Interfaces.Catalogs.IGenericCatalogService, MVP.Infrastructure.Services.Catalogs.GenericCatalogService>();
         services.AddScoped<ICatalogRepository, CatalogRepository>();
@@ -62,6 +64,21 @@ public static class DependencyInjection
         {
             services.AddScoped(providerType, implementation);
         }
+
+        services.AddHttpClient<MVP.Infrastructure.Services.IPdfGeneratorService, MVP.Infrastructure.Services.GotenbergPdfService>();
+
+        var supabaseUrl = configuration["Supabase:Url"];
+        var supabaseKey = configuration["Supabase:Key"];
+        if (!string.IsNullOrEmpty(supabaseUrl) && !string.IsNullOrEmpty(supabaseKey))
+        {
+            var options = new Supabase.SupabaseOptions
+            {
+                AutoRefreshToken = true,
+                AutoConnectRealtime = false
+            };
+            services.AddScoped<Supabase.Client>(_ => new Supabase.Client(supabaseUrl, supabaseKey, options));
+        }
+        services.AddScoped<MVP.Infrastructure.Services.ISupabaseStorageService, MVP.Infrastructure.Services.SupabaseStorageService>();
 
         services.AddHangfire(config => config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)

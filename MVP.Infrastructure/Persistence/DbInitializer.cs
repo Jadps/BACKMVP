@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MVP.Domain.Entities;
 using MVP.Domain.Constants;
 using MVP.Application.Interfaces;
+using Microsoft.Extensions.Logging;
 using MVP.Application.DTOs;
 using System;
 using System.Linq;
@@ -32,8 +33,10 @@ public static class DbInitializer
             
             await SeedAsync(userManager, roleManager, context, scope.ServiceProvider);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<ApplicationDbContext>>();
+            logger.LogError(ex, "An error occurred while initialising the database.");
             throw;
         }
     }

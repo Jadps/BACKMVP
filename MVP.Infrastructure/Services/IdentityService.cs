@@ -2,12 +2,14 @@ using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MVP.Application.Interfaces;
+using MVP.Domain.Constants;
 using MVP.Domain.Entities;
 using MVP.Infrastructure.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace MVP.Infrastructure.Services;
 
@@ -15,7 +17,9 @@ public class IdentityService(
     UserManager<User> userManager,
     RoleManager<Role> roleManager,
     ApplicationDbContext context,
-    Microsoft.Extensions.Caching.Hybrid.HybridCache cache) : IIdentityService
+    IUnitOfWork unitOfWork,
+    Microsoft.Extensions.Caching.Hybrid.HybridCache cache,
+    ILogger<IdentityService> logger) : IIdentityService
 {
     public async Task<List<User>> GetActiveUsersAsync()
     {
@@ -51,39 +55,36 @@ public class IdentityService(
         user.UserName ??= user.Email;
 
         var isInternalTransaction = context.Database.CurrentTransaction == null;
-        var transaction = isInternalTransaction ? await context.Database.BeginTransactionAsync() : null;
+        if (isInternalTransaction) await unitOfWork.BeginTransactionAsync();
 
         try
         {
             var result = await userManager.CreateAsync(user, password);
 
-            if (result.Succeeded && roleNames.Any())
-            {
-                var roleResult = await userManager.AddToRolesAsync(user, roleNames);
-                if (!roleResult.Succeeded)
-                {
-                    if (transaction != null) await transaction.RollbackAsync();
-                    return ApplicationResult.Failure(roleResult.Errors.Select(e => e.Description));
-                }
-            }
-
             if (result.Succeeded)
             {
-                if (transaction != null) await transaction.CommitAsync();
+                if (roleNames.Any())
+                {
+                    var roleResult = await userManager.AddToRolesAsync(user, roleNames);
+                    if (!roleResult.Succeeded)
+                    {
+                        if (isInternalTransaction) await unitOfWork.RollbackTransactionAsync();
+                        return ApplicationResult.Failure(roleResult.Errors.Select(e => e.Description));
+                    }
+                }
+
+                if (isInternalTransaction) await unitOfWork.CommitTransactionAsync();
                 return ApplicationResult.Success();
             }
 
-            if (transaction != null) await transaction.RollbackAsync();
+            if (isInternalTransaction) await unitOfWork.RollbackTransactionAsync();
             return ApplicationResult.Failure(result.Errors.Select(e => e.Description));
         }
-        catch
+        catch (Exception ex)
         {
-            if (transaction != null) await transaction.RollbackAsync();
+            logger.LogError(ex, "Error creating user {Email}", user.Email);
+            if (isInternalTransaction) await unitOfWork.RollbackTransactionAsync();
             throw;
-        }
-        finally
-        {
-            if (transaction != null) await transaction.DisposeAsync();
         }
     }
 
@@ -91,7 +92,7 @@ public class IdentityService(
     {
         var existingUser = await userManager.Users.FirstOrDefaultAsync(u => u.Uid == user.Uid);
         if (existingUser == null)
-            return ApplicationResult.Failure(new[] { "User not found." });
+            return ApplicationResult.Failure(new[] { ErrorMessages.UserNotFound });
 
         existingUser.FirstName = user.FirstName;
         existingUser.LastName = user.LastName;
@@ -104,7 +105,7 @@ public class IdentityService(
         existingUser.TenantId = user.TenantId;
 
         var isInternalTransaction = context.Database.CurrentTransaction == null;
-        var transaction = isInternalTransaction ? await context.Database.BeginTransactionAsync() : null;
+        if (isInternalTransaction) await unitOfWork.BeginTransactionAsync();
         try
         {
             var result = await userManager.UpdateAsync(existingUser);
@@ -118,22 +119,19 @@ public class IdentityService(
                 if (roleNames.Any())
                     await userManager.AddToRolesAsync(existingUser, roleNames);
 
-                if (transaction != null) await transaction.CommitAsync();
+                if (isInternalTransaction) await unitOfWork.CommitTransactionAsync();
                 await cache.RemoveByTagAsync($"user_{existingUser.Uid}_menu");
                 return ApplicationResult.Success();
             }
 
-            if (transaction != null) await transaction.RollbackAsync();
+            if (isInternalTransaction) await unitOfWork.RollbackTransactionAsync();
             return ApplicationResult.Failure(result.Errors.Select(e => e.Description));
         }
-        catch
+        catch (Exception ex)
         {
-            if (transaction != null) await transaction.RollbackAsync();
+            logger.LogError(ex, "Error updating user {Email}", user.Email);
+            if (isInternalTransaction) await unitOfWork.RollbackTransactionAsync();
             throw;
-        }
-        finally
-        {
-            if (transaction != null) await transaction.DisposeAsync();
         }
     }
 
@@ -141,7 +139,7 @@ public class IdentityService(
     {
         var user = await userManager.Users.FirstOrDefaultAsync(u => u.Uid == uid && !u.IsDeleted);
         if (user == null) 
-            return ApplicationResult.Failure("User not found.", ErrorType.NotFound);
+            return ApplicationResult.Failure(ErrorMessages.UserNotFound, ErrorType.NotFound);
 
         user.IsDeleted = true;
         await userManager.UpdateAsync(user);

@@ -118,7 +118,6 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 
 builder.Services.AddMassTransit(x =>
 {
-    x.SetLicense("OpenSource");
     x.AddConsumer<ReportConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>

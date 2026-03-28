@@ -35,28 +35,6 @@ public static class WebApplicationExtensions
                     });
             }
 
-            if (HttpMethods.IsPost(context.Request.Method) ||
-                HttpMethods.IsPut(context.Request.Method) ||
-                HttpMethods.IsDelete(context.Request.Method))
-            {
-                var endpoint = context.GetEndpoint();
-                var antiforgeryMetadata = endpoint?.Metadata.GetMetadata<IAntiforgeryMetadata>();
-
-                if (antiforgeryMetadata?.RequiresValidation != false && !context.Request.Path.StartsWithSegments("/hubs"))
-                {
-                    try
-                    {
-                        await antiforgery.ValidateRequestAsync(context);
-                    }
-                    catch (AntiforgeryValidationException)
-                    {
-                        context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                        await context.Response.WriteAsJsonAsync(new { message = "Antiforgery token validation failed." });
-                        return;
-                    }
-                }
-            }
-
             await next();
         });
     }

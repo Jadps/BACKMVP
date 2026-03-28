@@ -1,0 +1,14 @@
+**/.dockerignore
+**/.git
+**/.gitignore
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/out
+**/*.db
+**/*.log
+**/.env
+Dockerfile
+docker-compose*
+node_modules

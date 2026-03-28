@@ -124,7 +124,9 @@ builder.Services.AddInfrastructureSecurity(builder.Configuration);
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
-var rabbitHost = builder.Configuration["RabbitHost"] ?? "localhost";
+var rabbitHost = builder.Configuration["RabbitMq:Host"] ?? "localhost";
+var rabbitUser = builder.Configuration["RabbitMq:Username"] ?? "guest";
+var rabbitPass = builder.Configuration["RabbitMq:Password"] ?? "guest";
 
 builder.Services.AddMassTransit(x =>
 {
@@ -133,8 +135,8 @@ builder.Services.AddMassTransit(x =>
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host(rabbitHost, "/", h => {
-            h.Username("guest");
-            h.Password("guest");
+            h.Username(rabbitUser);
+            h.Password(rabbitPass);
         });
 
         cfg.ConfigureEndpoints(context);

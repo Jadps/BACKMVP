@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
@@ -11,13 +12,13 @@ public static class WebApplicationExtensions
 {
     public static IApplicationBuilder UseAntiforgeryTokenMiddleware(this IApplicationBuilder app)
     {
+        var configuration = app.ApplicationServices.GetRequiredService<IConfiguration>();
+        var cookieDomain = configuration["Config:CookieDomain"] ?? ".alonsodev.online";
+
         return app.Use(async (context, next) =>
         {
             var antiforgery = context.RequestServices.GetRequiredService<IAntiforgery>();
             
-            var configuration = context.RequestServices.GetRequiredService<IConfiguration>();
-            var cookieDomain = configuration["Config:CookieDomain"] ?? ".alonsodev.online";
-
             var tokens = antiforgery.GetAndStoreTokens(context);
 
             if (tokens.RequestToken != null)
@@ -39,9 +40,9 @@ public static class WebApplicationExtensions
                 HttpMethods.IsDelete(context.Request.Method))
             {
                 var endpoint = context.GetEndpoint();
-                var ignoreAntiforgery = endpoint?.Metadata.GetMetadata<IgnoreAntiforgeryTokenAttribute>();
+                var antiforgeryMetadata = endpoint?.Metadata.GetMetadata<IAntiforgeryMetadata>();
 
-                if (ignoreAntiforgery == null && !context.Request.Path.StartsWithSegments("/hubs"))
+                if (antiforgeryMetadata?.RequiresValidation != false && !context.Request.Path.StartsWithSegments("/hubs"))
                 {
                     try
                     {

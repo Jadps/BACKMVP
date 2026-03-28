@@ -7,10 +7,24 @@ services:
     restart: unless-stopped
     ports:
       - "8080:8080"
+    environment:
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=${RABBIT_USER:-admin}
+      - RabbitMq__Password=${RABBIT_PASSWORD:-admin_password}
+      - ASPNETCORE_ENVIRONMENT=Production
     env_file: .env
     depends_on:
       - rabbitmq
       - gotenberg
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
   db-postgres:
     image: postgres:16
     container_name: dbmvp
@@ -42,6 +56,9 @@ services:
     image: rabbitmq:3-management
     container_name: mvp-rabbitmq
     restart: unless-stopped
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBIT_USER:-admin}
+      - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD:-admin_password}
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -66,5 +83,7 @@ services:
     volumes:
       - ./data:/data
       - ./letsencrypt:/etc/letsencrypt
+      - ./dp-keys:/home/app/.aspnet/DataProtection-Keys
 volumes:
   pgdata:
+  dp-keys:

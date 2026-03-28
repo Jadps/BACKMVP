@@ -29,7 +29,9 @@ public class AuthController(IAuthService authService) : ControllerBase
             Response.AppendSecureCookie("AccessToken", result.Data.Token, result.Data.Expiration);
             Response.AppendSecureCookie("RefreshToken", result.Data.RefreshToken, DateTime.UtcNow.AddDays(7));
 
-            return Ok(new { message = "Successfully login" });
+            return Ok(new { 
+                message = "Successfully login"
+            });
         }
 
         return Unauthorized(result.ErrorMessage);
@@ -72,7 +74,9 @@ public class AuthController(IAuthService authService) : ControllerBase
             Response.AppendSecureCookie("AccessToken", result.Data.Token, result.Data.Expiration);
             Response.AppendSecureCookie("RefreshToken", result.Data.RefreshToken, DateTime.UtcNow.AddDays(7));
 
-            return Ok(new { message = "Token refreshed successfully" });
+            return Ok(new { 
+                message = "Token refreshed successfully"
+            });
         }
 
         return result.ToActionResult();

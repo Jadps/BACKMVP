@@ -116,13 +116,15 @@ builder.Services.AddInfrastructureSecurity(builder.Configuration);
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
+var rabbitHost = builder.Configuration["RabbitHost"] ?? "localhost";
+
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<ReportConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        cfg.Host("localhost", "/", h => {
+        cfg.Host(rabbitHost, "/", h => {
             h.Username("guest");
             h.Password("guest");
         });

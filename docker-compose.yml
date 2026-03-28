@@ -1,4 +1,16 @@
 services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mvp-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file: .env
+    depends_on:
+      - rabbitmq
+      - gotenberg
   db-postgres:
     image: postgres:16
     container_name: dbmvp
@@ -43,5 +55,16 @@ services:
       - "--api-port=3000"
     ports:
       - "3000:3000"
+  nginx-proxy:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: mvp-proxy
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '81:81'
+      - '443:443'
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
 volumes:
   pgdata:

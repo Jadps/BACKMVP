@@ -9,7 +9,6 @@ This project uses Clean Architecture to keep business logic separated from frame
 ![.NET](https://img.shields.io/badge/.NET-10-512BD4?style=flat&logo=dotnet&logoColor=white)
 ![C#](https://img.shields.io/badge/C%23-14-239120?style=flat&logo=c-sharp&logoColor=white)
 ![EF Core](https://img.shields.io/badge/EF_Core-ORM-6DB33F?style=flat)
-![SQL Server](https://img.shields.io/badge/SQL_Server-CC2927?style=flat&logo=microsoftsqlserver&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=flat&logo=postgresql&logoColor=white)
 
 ![Build Status](https://img.shields.io/github/actions/workflow/status/Jadps/BACKMVP/backend.yml?branch=main&style=flat)

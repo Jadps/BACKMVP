@@ -16,18 +16,19 @@ public class ReportService(ApplicationDbContext dbContext) : IReportService
     {
         return await dbContext.Users
             .Where(u => !u.IsDeleted)
-            .Include(u => u.UserRoles)
-                .ThenInclude(ur => dbContext.Roles.Where(r => r.Id == ur.RoleId))
-                    .ThenInclude(r => r.RoleModules)
-                        .ThenInclude(rm => rm.Module)
+            .OrderByDescending(u => u.Id)
             .Take(count)
             .Select(u => new ReportUserDto
             {
                 FullName = u.FullName,
                 Email = u.Email,
-                Roles = u.UserRoles.Select(ur => dbContext.Roles.First(r => r.Id == ur.RoleId).Name!).ToList(),
-                Modules = u.UserRoles
-                    .SelectMany(ur => dbContext.Roles.First(r => r.Id == ur.RoleId).RoleModules)
+                Roles = dbContext.Roles
+                    .Where(r => u.UserRoles.Any(ur => ur.RoleId == r.Id))
+                    .Select(r => r.Name!)
+                    .ToList(),
+                Modules = dbContext.Roles
+                    .Where(r => u.UserRoles.Any(ur => ur.RoleId == r.Id))
+                    .SelectMany(r => r.RoleModules)
                     .Select(rm => rm.Module.Description)
                     .Distinct()
                     .ToList()

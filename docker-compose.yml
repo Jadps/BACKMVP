@@ -29,6 +29,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   db-postgres:
     image: postgres:16
@@ -60,16 +65,24 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: mvp-rabbitmq
+    user: "rabbitmq"
     restart: unless-stopped
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBIT_USER:-admin}
       - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD:-admin_password}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "-q", "check_running" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   gotenberg:
     image: gotenberg/gotenberg:8
@@ -78,6 +91,18 @@ services:
     command:
       - "gotenberg"
       - "--api-port=3000"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   nginx-proxy:
     image: 'jc21/nginx-proxy-manager:latest'
     container_name: mvp-proxy
@@ -90,6 +115,13 @@ services:
       - ./data:/data
       - ./letsencrypt:/etc/letsencrypt
       - ./dp-keys:/home/app/.aspnet/DataProtection-Keys
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   pgdata:
   dp-keys:
+  rabbitmq_data:

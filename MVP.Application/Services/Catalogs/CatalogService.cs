@@ -129,10 +129,18 @@ public class CatalogService(
 
     public async Task<ApplicationResult<List<ModuleDto>>> GetMenuModulesAsync()
     {
-        var userIdJson = currentTenantService.UserId;
-        if (string.IsNullOrEmpty(userIdJson) || !Guid.TryParse(userIdJson, out var userUid))
+        var userIdStr = currentTenantService.UserId;
+        if (string.IsNullOrEmpty(userIdStr))
         {
             return ApplicationResult<List<ModuleDto>>.Success([]);
+        }
+
+        Guid userUid;
+        if (!Guid.TryParse(userIdStr, out userUid))
+        {
+            var resolvedUid = await catalogRepository.GetUserUidByLoginIdAsync(userIdStr, default);
+            if (resolvedUid == null) return ApplicationResult<List<ModuleDto>>.Success([]);
+            userUid = resolvedUid.Value;
         }
 
         var entities = await catalogRepository.GetActiveModulesWithSubModulesAsync(default);

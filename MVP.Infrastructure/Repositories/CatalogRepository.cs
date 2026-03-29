@@ -36,6 +36,20 @@ public class CatalogRepository(ApplicationDbContext context) : ICatalogRepositor
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<Guid?> GetUserUidByLoginIdAsync(string loginId, CancellationToken cancellationToken)
+    {
+        var query = context.Users.AsNoTracking();
+        
+        if (int.TryParse(loginId, out int id))
+        {
+            return await query.Where(u => u.Id == id).Select(u => u.Uid).FirstOrDefaultAsync(cancellationToken);
+        }
+
+        return await query.Where(u => u.Email == loginId || u.UserName == loginId)
+            .Select(u => u.Uid)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<List<Module>> GetModulesByUidsAsync(IEnumerable<Guid> uids, CancellationToken cancellationToken)
     {
         return await context.Modules

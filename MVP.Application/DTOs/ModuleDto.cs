@@ -10,6 +10,7 @@ public class ModuleDto
     public string? Icon { get; set; }
     public string? Action { get; set; }
     public int Order { get; set; }
+    public int ModuleTypeId { get; set; }
     public Guid? ParentId { get; set; }
     public List<ModuleDto> SubModules { get; set; } = new();
 }

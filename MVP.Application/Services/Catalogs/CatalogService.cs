@@ -1,5 +1,4 @@
 using AutoMapper;
-using Microsoft.Extensions.Caching.Hybrid;
 using MVP.Application.DTOs;
 using MVP.Application.Interfaces;
 using MVP.Application.Interfaces.Catalogs;
@@ -17,25 +16,13 @@ public class CatalogService(
     ICurrentTenantService currentTenantService,
     IMapper mapper, 
     ICatalogRepository catalogRepository,
-    IUnitOfWork unitOfWork,
-    HybridCache cache) : ICatalogService
+    IUnitOfWork unitOfWork) : ICatalogService
 {
-    private const string RolesCacheKey = "global_roles";
-    private const string ModulesCacheKey = "modules_cache";
-
     public async Task<ApplicationResult<List<RoleDto>>> GetRolesAsync()
     {
-        var roles = await cache.GetOrCreateAsync(
-            RolesCacheKey, 
-            async cancelToken =>
-            {
-                var roles = await identityService.GetActiveRolesAsync();
-                return mapper.Map<List<RoleDto>>(roles);
-            },
-            tags: ["global_roles"]
-        );
-        
-        return ApplicationResult<List<RoleDto>>.Success(roles ?? []);
+        var roles = await identityService.GetActiveRolesAsync();
+        var mapped = mapper.Map<List<RoleDto>>(roles);
+        return ApplicationResult<List<RoleDto>>.Success(mapped);
     }
 
     public async Task<ApplicationResult> CreateRoleAsync(RoleDto dto)
@@ -77,8 +64,6 @@ public class CatalogService(
             }
 
             await unitOfWork.CommitTransactionAsync();
-            await cache.RemoveByTagAsync("global_roles");
-            await cache.RemoveByTagAsync("all_menus");
             return ApplicationResult.Success();
         }
         catch (Exception ex)
@@ -133,8 +118,6 @@ public class CatalogService(
 
             await unitOfWork.SaveChangesAsync();
             await unitOfWork.CommitTransactionAsync();
-            await cache.RemoveByTagAsync("global_roles");
-            await cache.RemoveByTagAsync("all_menus");
             return ApplicationResult.Success();
         }
         catch (Exception ex)
@@ -152,55 +135,37 @@ public class CatalogService(
             return ApplicationResult<List<ModuleDto>>.Success([]);
         }
 
-        var tenantId = currentTenantService.TenantId;
-        var cacheKey = $"menu_user_{userUid}";
-        var tags = new List<string> { $"user_{userUid}_menu", "all_menus" };
-        if (tenantId.HasValue)
-            tags.Add($"tenant_{tenantId.Value}_menus");
-        else
-            tags.Add("superadmin_menus");
+        var entities = await catalogRepository.GetActiveModulesWithSubModulesAsync(default);
+        var modules = mapper.Map<List<ModuleDto>>(entities);
 
-        var filteredTopLevel = await cache.GetOrCreateAsync(
-            cacheKey,
-            async cancelToken =>
-            {
-                var modules = await cache.GetOrCreateAsync(
-                    ModulesCacheKey,
-                    async ct => {
-                        var entities = await catalogRepository.GetActiveModulesWithSubModulesAsync(ct);
-                        return mapper.Map<List<ModuleDto>>(entities);
-                    },
-                    tags: ["modules_cache"]
-                );
+        if (currentTenantService.IsSuperAdmin)
+        {
+            var superAdminModules = modules
+                .Where(m => m.ParentId == null)
+                .Select(m => mapper.Map<ModuleDto>(m))
+                .OrderBy(m => m.Order)
+                .ToList();
+            return ApplicationResult<List<ModuleDto>>.Success(superAdminModules);
+        }
 
-                if (currentTenantService.IsSuperAdmin)
-                {
-                    return modules
-                        .Where(m => m.ParentId == null)
-                        .Select(m => mapper.Map<ModuleDto>(m))
-                        .OrderBy(m => m.Order)
-                        .ToList();
-                }
+        var allowedModuleUids = await catalogRepository.GetAllowedModuleIdsForUserAsync(userUid, default);
+        var allowedModuleUidsHash = new HashSet<Guid>(allowedModuleUids);
 
-                var allowedModuleUids = await catalogRepository.GetAllowedModuleIdsForUserAsync(userUid, cancelToken);
-
-                return modules
-                    .Where(m => m.ParentId == null && allowedModuleUids.Contains(m.Id ?? Guid.Empty))
-                    .Select(m => {
-                        var dto = mapper.Map<ModuleDto>(m);
-                        dto.SubModules = m.SubModules
-                            .Where(sm => allowedModuleUids.Contains(sm.Id ?? Guid.Empty))
-                            .OrderBy(s => s.Order)
-                            .ToList();
-                        return dto;
-                    })
-                    .OrderBy(m => m.Order)
+        var filteredModules = modules
+            .Where(m => m.ParentId == null && 
+                       (allowedModuleUidsHash.Contains(m.Id ?? Guid.Empty) || 
+                        m.SubModules.Any(sm => allowedModuleUidsHash.Contains(sm.Id ?? Guid.Empty))))
+            .Select(m => {
+                var dto = mapper.Map<ModuleDto>(m);
+                dto.SubModules = m.SubModules
+                    .Where(sm => allowedModuleUidsHash.Contains(sm.Id ?? Guid.Empty))
+                    .OrderBy(s => s.Order)
                     .ToList();
-            },
-            new HybridCacheEntryOptions { Expiration = TimeSpan.FromHours(1) },
-            tags
-        );
+                return dto;
+            })
+            .OrderBy(m => m.Order)
+            .ToList();
 
-        return ApplicationResult<List<ModuleDto>>.Success(filteredTopLevel ?? []);
+        return ApplicationResult<List<ModuleDto>>.Success(filteredModules);
     }
 }

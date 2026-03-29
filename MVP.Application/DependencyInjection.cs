@@ -21,7 +21,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<Interfaces.Users.IUserService, Services.Users.UserService>();
-        services.AddScoped<Interfaces.Catalogs.ICatalogService, Services.Catalogs.CatalogService>();
+        services.AddScoped<MVP.Application.Services.Catalogs.CatalogService>();
         services.AddScoped<Interfaces.ITenantService, Services.TenantService>();
         services.AddScoped<Interfaces.IOnboardingService, Services.OnboardingService>();
 

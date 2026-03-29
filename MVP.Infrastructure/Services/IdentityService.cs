@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using MVP.Application.Constants;
 
 namespace MVP.Infrastructure.Services;
 
@@ -120,7 +121,7 @@ public class IdentityService(
                     await userManager.AddToRolesAsync(existingUser, roleNames);
 
                 if (isInternalTransaction) await unitOfWork.CommitTransactionAsync();
-                await cache.RemoveByTagAsync($"user_{existingUser.Uid}_menu");
+                await cache.RemoveByTagAsync(CacheTags.UserMenu(existingUser.Uid));
                 return ApplicationResult.Success();
             }
 

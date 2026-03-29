@@ -50,6 +50,17 @@ public static class DependencyInjection
         services.AddScoped<MVP.Application.Interfaces.IFileStorageService, MVP.Infrastructure.Services.SupabaseStorageService>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IEmailService, SmtpEmailService>();
+        services.AddScoped<IEmailTemplateProvider, FileSystemEmailTemplateProvider>();
+
+        services.AddScoped<MVP.Application.Interfaces.Catalogs.ICatalogService>(provider => 
+            new MVP.Infrastructure.Services.Catalogs.CachedCatalogService(
+                provider.GetRequiredService<MVP.Application.Services.Catalogs.CatalogService>(),
+                provider.GetRequiredService<Microsoft.Extensions.Caching.Hybrid.HybridCache>(),
+                provider.GetRequiredService<MVP.Application.Interfaces.ICurrentTenantService>(),
+                provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<MVP.Infrastructure.Services.Catalogs.CachedCatalogService>>()
+            )
+        );
+
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IPdfGeneratorService, GotenbergPdfService>();
         services.AddScoped<MVP.Application.Interfaces.IAuthService, MVP.Infrastructure.Services.AuthService>();

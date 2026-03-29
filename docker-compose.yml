@@ -5,8 +5,6 @@ services:
       dockerfile: Dockerfile
     container_name: mvp-api
     restart: unless-stopped
-    ports:
-      - "8080:8080"
     environment:
       - RabbitMq__Host=rabbitmq
       - RabbitMq__Username=${RABBIT_USER:-admin}
@@ -25,6 +23,12 @@ services:
         reservations:
           cpus: '0.1'
           memory: 128M
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   db-postgres:
     image: postgres:16
@@ -60,9 +64,12 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBIT_USER:-admin}
       - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD:-admin_password}
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "check_running" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   gotenberg:
     image: gotenberg/gotenberg:8
@@ -71,8 +78,6 @@ services:
     command:
       - "gotenberg"
       - "--api-port=3000"
-    ports:
-      - "3000:3000"
   nginx-proxy:
     image: 'jc21/nginx-proxy-manager:latest'
     container_name: mvp-proxy

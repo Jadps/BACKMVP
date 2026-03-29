@@ -2,8 +2,10 @@ using Asp.Versioning;
 using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using MVP.Application.Interfaces;
 using MVP.Application.Messages;
+using MVP.WebAPI.Models;
 using System;
 using System.Threading.Tasks;
 
@@ -12,13 +14,14 @@ namespace MVP.WebAPI.Controllers;
 [ApiVersion("1.0")]
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
+[EnableRateLimiting("StrictPolicy")]
 public class ReportsController(
     IPublishEndpoint publishEndpoint,
     ICurrentTenantService currentTenantService) : ControllerBase
 {
     [Authorize]
     [HttpPost("generate")]
-    public async Task<IActionResult> GenerateReport()
+    public async Task<IActionResult> GenerateReport([FromBody] GenerateReportRequest request)
     {
         var userUidStr = currentTenantService.UserId;
         
@@ -30,7 +33,7 @@ public class ReportsController(
         var command = new GenerateReportCommand 
         { 
             UserId = uid,
-            ReportType = "MonthlySummary" 
+            ReportType = request.ReportType 
         };
 
         await publishEndpoint.Publish(command);

@@ -12,10 +12,11 @@ jobs:
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
-          username: root
+          username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          port: 22
+          port: ${{ secrets.SSH_PORT }}
           script: |
             cd ~/BACKMVP
             git pull origin main
-            docker compose up -d --build
+            # Usamos build específico para la api si es lo único que cambia frecuentemente
+            docker compose up -d --build api

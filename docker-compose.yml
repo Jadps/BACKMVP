@@ -7,8 +7,8 @@ services:
     restart: unless-stopped
     environment:
       - RabbitMq__Host=rabbitmq
-      - RabbitMq__Username=${RABBIT_USER:-admin}
-      - RabbitMq__Password=${RABBIT_PASSWORD:-admin_password}
+      - RabbitMq__Username=${RabbitMq__Username:-admin}
+      - RabbitMq__Password=${RabbitMq__Password:-admin_password}
       - Config__GotenbergUrl=http://gotenberg:3000
       - ASPNETCORE_ENVIRONMENT=Production
     env_file: .env
@@ -68,8 +68,8 @@ services:
     user: "rabbitmq"
     restart: unless-stopped
     environment:
-      - RABBITMQ_DEFAULT_USER=${RABBIT_USER:-admin}
-      - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD:-admin_password}
+      - RABBITMQ_DEFAULT_USER=${RabbitMq__Username:-admin}
+      - RABBITMQ_DEFAULT_PASS=${RabbitMq__Password:-admin_password}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:

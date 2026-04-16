@@ -1,0 +1,44 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: mvp-rabbitmq
+    restart: unless-stopped
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RabbitMq__Username}
+      - RABBITMQ_DEFAULT_PASS=${RabbitMq__Password}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "check_running" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - dokploy-network
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    container_name: mvp-gotenberg
+    restart: unless-stopped
+    command:
+      - "gotenberg"
+      - "--api-port=3000"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    networks:
+      - dokploy-network
+
+volumes:
+  rabbitmq_data:
+
+
+networks:
+  dokploy-network:
+    external: true

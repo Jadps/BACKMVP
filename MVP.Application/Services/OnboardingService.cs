@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using AutoMapper;
-using Hangfire;
 using Microsoft.Extensions.Logging;
 
 namespace MVP.Application.Services;

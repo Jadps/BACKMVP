@@ -9,8 +9,6 @@ using System.Reflection;
 using MVP.Infrastructure.Persistence;
 using MVP.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
-using Hangfire;
-using Hangfire.PostgreSql;
 using MVP.Application.Interfaces;
 using MVP.Application.Interfaces.Repositories;
 using MVP.Infrastructure.Repositories;
@@ -96,16 +94,6 @@ public static class DependencyInjection
             services.AddScoped<Supabase.Client>(_ => new Supabase.Client(supabaseUrl, supabaseKey, options));
         }
         services.AddScoped<MVP.Infrastructure.Services.ISupabaseStorageService, MVP.Infrastructure.Services.SupabaseStorageService>();
-
-        services.AddHangfire(config => config
-            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-            .UseSimpleAssemblyNameTypeSerializer()
-            .UseRecommendedSerializerSettings()
-            .UsePostgreSqlStorage(
-                options => options.UseNpgsqlConnection(configuration.GetConnectionString("DefaultConnection"))
-            ));
-
-        services.AddHangfireServer();
 
         return services;
     }

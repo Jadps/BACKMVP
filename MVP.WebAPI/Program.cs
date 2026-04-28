@@ -14,7 +14,6 @@ using Scalar.AspNetCore;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
-using Hangfire;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -167,11 +166,6 @@ app.UseMiddleware<TenantResolverMiddleware>();
 app.UseRateLimiter();
 
 app.UseAntiforgeryTokenMiddleware();
-
-app.UseHangfireDashboard("/hangfire", new DashboardOptions
-{
-    Authorization = new[] { new HangfireAuthorizationFilter() }
-});
 
 app.MapControllers();
 app.MapHub<ReportsHub>("/hubs/reports");

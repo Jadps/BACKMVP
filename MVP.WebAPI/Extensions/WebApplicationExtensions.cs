@@ -13,7 +13,7 @@ public static class WebApplicationExtensions
     public static IApplicationBuilder UseAntiforgeryTokenMiddleware(this IApplicationBuilder app)
     {
         var configuration = app.ApplicationServices.GetRequiredService<IConfiguration>();
-        var cookieDomain = configuration["Config:CookieDomain"] ?? ".alonsodev.online";
+        var cookieDomain = configuration["Config:CookieDomain"] ?? null;
 
         return app.Use(async (context, next) =>
         {

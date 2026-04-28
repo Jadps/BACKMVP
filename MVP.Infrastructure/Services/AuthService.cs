@@ -5,7 +5,6 @@ using System.Security.Claims;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Hangfire;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;

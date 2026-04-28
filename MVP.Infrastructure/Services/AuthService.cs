@@ -19,8 +19,7 @@ namespace MVP.Infrastructure.Services;
 public class AuthService(
     UserManager<User> userManager, 
     IOptions<JwtOptions> jwtOptions,
-    IOptions<AppOptions> appOptions,
-    IBackgroundJobClient backgroundJobs) : IAuthService
+    IOptions<AppOptions> appOptions) : IAuthService
 {
     private readonly JwtOptions _jwt = jwtOptions.Value;
     private readonly AppOptions _app = appOptions.Value;
@@ -79,9 +78,6 @@ public class AuthService(
         
         var frontendUrl = _app.FrontendUrl;
         var resetLink = $"{frontendUrl}/reset-password?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Email!)}";
-
-        backgroundJobs.Enqueue<IEmailService>(emailService => 
-            emailService.SendPasswordResetEmailAsync(user.Email!, resetLink));
 
         return ApplicationResult.Success();
     }

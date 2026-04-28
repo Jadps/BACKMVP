@@ -16,8 +16,7 @@ public class OnboardingService(
     IUnitOfWork unitOfWork,
     ITenantRepository tenantRepository,
     ICatalogRepository catalogRepository,
-    IIdentityService identityService, 
-    IBackgroundJobClient backgroundJobs,
+    IIdentityService identityService,
     ILogger<OnboardingService> logger) : IOnboardingService
 {
     public async Task<ApplicationResult> RegisterNewTenantAsync(OnboardingRequestDto request, string initialRoleName = AppRoles.TenantAdmin, bool isHost = false)
@@ -87,9 +86,6 @@ public class OnboardingService(
             }
 
             await unitOfWork.CommitTransactionAsync();
-
-            backgroundJobs.Enqueue<IEmailService>(emailService => 
-                emailService.SendWelcomeEmailAsync(adminUser.Email!, adminUser.FirstName));
 
             return ApplicationResult.Success();
         }
